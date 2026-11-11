@@ -85,7 +85,7 @@
   --secondary: oklch(0.945 0.006 250);
   --secondary-foreground: oklch(0.28 0.03 257);
   --muted: oklch(0.955 0.005 250);
-  --muted-foreground: oklch(0.52 0.025 257);
+  --muted-foreground: oklch(0.47 0.025 257);
   --accent: oklch(0.93 0.012 250);
   --accent-foreground: oklch(0.21 0.025 260);
   --destructive: oklch(0.577 0.215 27);
@@ -106,15 +106,15 @@
   --sidebar-accent-foreground: oklch(0.95 0.006 250);
   --sidebar-border: oklch(0.32 0.03 258);
   --sidebar-ring: oklch(0.7 0.13 235);
-  --critical: oklch(0.58 0.21 27);
+  --critical: oklch(0.52 0.2 27);
   --critical-soft: oklch(0.95 0.035 27);
-  --elevated: oklch(0.68 0.16 65);
+  --elevated: oklch(0.52 0.13 60);
   --elevated-soft: oklch(0.96 0.05 80);
   --monitored: oklch(0.55 0.04 250);
   --monitored-soft: oklch(0.95 0.01 250);
-  --success: oklch(0.6 0.15 155);
+  --success: oklch(0.48 0.12 155);
   --success-soft: oklch(0.95 0.045 155);
-  --info: oklch(0.58 0.14 245);
+  --info: oklch(0.5 0.14 245);
   --info-soft: oklch(0.95 0.03 245);
 }
 
@@ -143,5 +143,13 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     font-size: 13px;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   }
 }

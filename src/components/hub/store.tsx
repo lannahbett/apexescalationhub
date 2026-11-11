@@ -23,7 +23,12 @@ export function HubProvider({ children }: { children: ReactNode }) {
     if (loaded) localStorage.setItem(KEY, JSON.stringify(parts));
   }, [parts, loaded]);
 
-  const update: Ctx["update"] = (id, patch, log) =>
+  const [announce, setAnnounce] = useState("");
+  const update: Ctx["update"] = (id, patch, log) => {
+    if (log) {
+      const pn = parts.find((p) => p.id === id)?.partNumber ?? "Part";
+      setAnnounce(`${pn}: ${log.text}`);
+    }
     setParts((ps) =>
       ps.map((p) =>
         p.id !== id
@@ -37,8 +42,12 @@ export function HubProvider({ children }: { children: ReactNode }) {
             },
       ),
     );
+  };
   return (
-    <HubCtx.Provider value={{ parts, update, reset: () => setParts(buildSeed()) }}>{children}</HubCtx.Provider>
+    <HubCtx.Provider value={{ parts, update, reset: () => { setParts(buildSeed()); setAnnounce("Sample data restored"); } }}>
+      {children}
+      <div role="status" aria-live="polite" className="sr-only">{announce}</div>
+    </HubCtx.Provider>
   );
 }
 

@@ -1,3 +1,4 @@
+import { AlertTriangle, CheckCircle2, Circle, Diamond, OctagonX, Triangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CONFIDENCE, STAGES, initials, riskTier, type Confidence, type Stage } from "@/lib/shortages";
 
@@ -7,26 +8,30 @@ const tierCls = {
   monitored: "bg-monitored-soft text-monitored border border-border",
 };
 const tierLabel = { critical: "Critical", elevated: "Elevated", monitored: "Monitored" };
+const tierIcon = { critical: Triangle, elevated: Diamond, monitored: Circle };
 
 export function RiskPill({ score, showLabel = true }: { score: number; showLabel?: boolean }) {
   const t = riskTier(score);
+  const Icon = tierIcon[t];
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold", tierCls[t])}>
-      {score}
-      {showLabel && <span className="font-sans font-medium uppercase tracking-wide text-[10px]">{tierLabel[t]}</span>}
+    <span aria-label={`Risk ${score}, ${tierLabel[t]}`} title={tierLabel[t]} className={cn("inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold", tierCls[t])}>
+      <Icon aria-hidden className="size-3 fill-current" />
+      <span aria-hidden>{score}</span>
+      {showLabel && <span aria-hidden className="font-sans font-medium uppercase tracking-wide text-[10px]">{tierLabel[t]}</span>}
     </span>
   );
 }
 
-const confCls: Record<Confidence, { wrap: string; dot: string }> = {
-  high: { wrap: "bg-success-soft text-success", dot: "bg-success" },
-  at_risk: { wrap: "bg-elevated-soft text-elevated", dot: "bg-elevated" },
-  stalled: { wrap: "bg-critical-soft text-critical", dot: "bg-critical animate-pulse" },
+const confCls: Record<Confidence, { wrap: string; icon: typeof CheckCircle2 }> = {
+  high: { wrap: "bg-success-soft text-success", icon: CheckCircle2 },
+  at_risk: { wrap: "bg-elevated-soft text-elevated", icon: AlertTriangle },
+  stalled: { wrap: "bg-critical-soft text-critical", icon: OctagonX },
 };
 export function ConfidencePill({ value }: { value: Confidence }) {
+  const Icon = confCls[value].icon;
   return (
     <span title={CONFIDENCE[value].hint} className={cn("inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium", confCls[value].wrap)}>
-      <span className={cn("size-1.5 rounded-full", confCls[value].dot)} />
+      <Icon aria-hidden className="size-3" />
       {CONFIDENCE[value].label}
     </span>
   );
@@ -52,7 +57,7 @@ export function StageBadge({ stage }: { stage: Stage }) {
 export function PlannerBadge({ name }: { name: string }) {
   return (
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-      <span className="grid size-6 place-items-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">{initials(name)}</span>
+      <span aria-hidden className="grid size-6 place-items-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">{initials(name)}</span>
       <span className="text-xs">{name}</span>
     </span>
   );

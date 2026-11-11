@@ -179,7 +179,7 @@ function ConfidenceDialog({ part, open, onOpenChange }: { part: Part; open: bool
         </DialogHeader>
         <div className="grid grid-cols-3 gap-2">
           {(Object.keys(CONFIDENCE) as Confidence[]).map((c) => (
-            <button key={c} onClick={() => setVal(c)} className={cn("rounded border p-2 text-left", val === c ? "border-ring bg-accent" : "hover:bg-muted")}>
+            <button type="button" key={c} aria-pressed={val === c} onClick={() => setVal(c)} className={cn("rounded border p-2 text-left", val === c ? "border-ring bg-accent" : "hover:bg-muted")}>
               <ConfidencePill value={c} />
               <div className="mt-1 text-[11px] text-muted-foreground">{CONFIDENCE[c].hint}</div>
             </button>
