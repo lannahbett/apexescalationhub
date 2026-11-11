@@ -10,6 +10,7 @@ import { HubProvider, useHub } from "@/components/hub/store";
 import { KanbanBoard, ShortageTable, type Density } from "@/components/hub/board";
 import { PartSheet } from "@/components/hub/part-sheet";
 import { ImportDialog } from "@/components/hub/import-dialog";
+import { BriefingDialog, InboundParserDialog } from "@/components/hub/ai-tools";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -106,6 +107,8 @@ function Hub() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <BriefingDialog />
+            <InboundParserDialog />
             <Button size="icon" variant="ghost" onClick={reset} title="Reset sample data" aria-label="Reset sample data"><RotateCcw aria-hidden className="size-3.5" /></Button>
             <div role="group" aria-label="Row density" className="inline-flex rounded-md border bg-card p-0.5">
               {([["standard", Rows3, "Standard"], ["compact", Rows4, "Compact"]] as const).map(([id, Icon, label]) => (

@@ -1,4 +1,8 @@
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { Loader2, Sparkles } from "lucide-react";
+import { draftEscalation } from "@/lib/ai.functions";
+import { summarize } from "./ai-tools";
 import { toast } from "sonner";
 import { CalendarClock, Copy, Mail, MessageSquare, Phone, ShieldCheck, Workflow, ListChecks, Send, Gauge } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -145,6 +149,17 @@ Material Planning – Apex Manufacturing`;
 function EscalationDialog({ part, open, onOpenChange }: { part: Part; open: boolean; onOpenChange: (o: boolean) => void }) {
   const { update } = useHub();
   const [body, setBody] = useState("");
+  const [tone, setTone] = useState<"firm" | "collaborative" | "executive">("firm");
+  const [busy, setBusy] = useState(false);
+  const ai = useServerFn(draftEscalation);
+  const aiDraft = async () => {
+    setBusy(true);
+    try {
+      const r = await ai({ data: { tone, sender: CURRENT_USER, part: { ...summarize(part), po: part.po, qtyPending: part.qtyPending, uom: part.uom, targetBuild: part.targetBuild } } });
+      setBody(r.text);
+    } catch (e) { toast.error(e instanceof Error ? e.message : "AI draft failed"); }
+    finally { setBusy(false); }
+  };
   return (
     <Dialog open={open} onOpenChange={(o) => { if (o) setBody(draftEmail(part)); onOpenChange(o); }}>
       <DialogContent className="sm:max-w-2xl" onOpenAutoFocus={() => setBody(draftEmail(part))}>
@@ -152,7 +167,14 @@ function EscalationDialog({ part, open, onOpenChange }: { part: Part; open: bool
           <DialogTitle>Supplier escalation draft</DialogTitle>
           <DialogDescription>To: {part.supplierContact}</DialogDescription>
         </DialogHeader>
-        <Textarea aria-label="Supplier escalation email" value={body} onChange={(e) => setBody(e.target.value)} className="h-80 font-mono text-xs" />
+        <div className="flex flex-wrap items-center gap-2">
+          <label htmlFor="tone" className="text-xs text-muted-foreground">Tone</label>
+          <select id="tone" value={tone} onChange={(e) => setTone(e.target.value as typeof tone)} className="h-11 rounded-md border bg-card px-2 text-xs">
+            <option value="firm">Firm</option><option value="collaborative">Collaborative</option><option value="executive">Executive escalation</option>
+          </select>
+          <Button variant="secondary" onClick={aiDraft} disabled={busy}>{busy ? <Loader2 aria-hidden className="size-3.5 animate-spin" /> : <Sparkles aria-hidden className="size-3.5" />} Rewrite with AI</Button>
+        </div>
+        <Textarea aria-busy={busy} aria-label="Supplier escalation email" value={body} onChange={(e) => setBody(e.target.value)} className="h-80 font-mono text-xs" />
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => { navigator.clipboard.writeText(body); toast.success("Email copied to clipboard"); }}><Copy className="size-3.5" /> Copy</Button>
           <Button onClick={() => {
