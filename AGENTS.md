@@ -28,3 +28,4 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+- Board data lives in a client-side store (src/components/hub/store.tsx) persisted to localStorage, seeded from src/lib/shortages.ts; no backend yet, so keep business rules (risk tiers, KPIs, filters) in shortages.ts where tests cover them.
