@@ -50,7 +50,46 @@ export interface Part {
   leadTime?: LeadTimeSignal | undefined;
 }
 
-export interface CustomerOrder { so: string; customer: string; strategic: boolean; committed: string; value: number; penaltyPerDay: number }
+export type CommercialMode = "dual" | "tiers" | "penalties";
+export type CustomerTier = "tier1" | "tier2" | "tier3";
+export const COMMERCIAL_MODES: { id: CommercialMode; label: string }[] = [
+  { id: "dual", label: "Tiers + penalties" },
+  { id: "tiers", label: "Priority tiers & OTIF" },
+  { id: "penalties", label: "Contractual penalties" },
+];
+export const CUSTOMER_TIERS: Record<CustomerTier, string> = { tier1: "Tier 1 · Strategic", tier2: "Tier 2 · Core", tier3: "Tier 3 · Standard" };
+export interface CustomerOrder {
+  so: string; customer: string; strategic: boolean; committed: string; value: number; penaltyPerDay: number;
+  tier?: CustomerTier; penaltyGraceDays?: number; otifImpact?: boolean;
+}
+export const customerTier = (o: CustomerOrder): CustomerTier => o.tier ?? (o.strategic ? "tier1" : "tier3");
+export const commercialVisibility = (mode: CommercialMode) => ({ tiers: mode !== "penalties", penalties: mode !== "tiers" });
+export function validateCommercialTerms(tier: string, daily: number, grace: number) {
+  return ["tier1", "tier2", "tier3"].includes(tier) && Number.isFinite(daily) && daily >= 0 &&
+    Number.isInteger(grace) && grace >= 0 && grace <= 365;
+}
+/** Forecast only: chargeable slip after calendar-day grace; not an accrued invoice or confirmed OTIF score. */
+export function projectedPenalty(p: Part, o: CustomerOrder) {
+  const chargeableDays = Math.max(0, orderSlipDays(p, o) - (o.penaltyGraceDays ?? 0));
+  return { chargeableDays, total: chargeableDays * o.penaltyPerDay };
+}
+/** One commercial exposure per sales order, using its worst open-part delay. */
+export function computeCommercialKpis(parts: Part[]) {
+  const orders = new Map<string, { tier1: boolean; otif: boolean; penalty: number; daily: number }>();
+  for (const p of parts.filter((p) => p.stage !== "delivered")) for (const o of p.orders ?? []) {
+    const old = orders.get(o.so);
+    const penalty = projectedPenalty(p, o).total;
+    orders.set(o.so, {
+      tier1: (old?.tier1 ?? false) || customerTier(o) === "tier1",
+      otif: (old?.otif ?? false) || (o.otifImpact !== false && orderSlipDays(p, o) > 0),
+      penalty: Math.max(old?.penalty ?? 0, penalty),
+      daily: Math.max(old?.daily ?? 0, penalty > 0 ? o.penaltyPerDay : 0),
+    });
+  }
+  const rows = [...orders.values()];
+  return { tier1Orders: rows.filter((o) => o.tier1).length, otifOrders: rows.filter((o) => o.otif).length,
+    projectedPenalties: rows.reduce((s, o) => s + o.penalty, 0), dailyPenalties: rows.reduce((s, o) => s + o.daily, 0) };
+}
 export interface DemandSignal { baselineWeekly: number; actualWeekly: number; driver: string }
 export interface LeadTimeSignal { erpDays: number; actualDays: number; otdPct: number }
 
@@ -139,12 +178,13 @@ const DRIVERS = ["Customer bulk order", "Unplanned line ramp-up", "Scrap / yield
 export function seedSignals(i: number, s: { daysLate: number; valueAtRisk: number; buildIn: number }) {
   const n = 1 + (i % 3);
   const orders: CustomerOrder[] = Array.from({ length: n }, (_, k) => {
-    const [customer, strategic] = CUSTOMERS[(i * 3 + k) % CUSTOMERS.length]!;
+    const [customer, strategic] = CUSTOMERS[(i * 3 + k) % CUSTOMERS.length] ?? ["Demo customer", false];
     return {
       so: `SO-${9900 + i * 7 + k}`, customer, strategic,
       committed: day(s.buildIn + 2 + k * 3 - (i % 2) * 3, 12),
       value: Math.round((s.valueAtRisk * (1.6 - k * 0.4)) / 100) * 100,
       penaltyPerDay: strategic ? 2500 + (i % 4) * 1250 : 0,
+      tier: strategic ? "tier1" : i % 2 ? "tier2" : "tier3", penaltyGraceDays: 0, otifImpact: true,
     };
   });
   const baselineWeekly = 40 + i * 15;

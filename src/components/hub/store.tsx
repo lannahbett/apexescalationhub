@@ -1,9 +1,11 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { buildSeed, CURRENT_USER, type Part, type TimelineEntry } from "@/lib/shortages";
+import { buildSeed, CURRENT_USER, type CommercialMode, type Part, type TimelineEntry } from "@/lib/shortages";
 
 const KEY = "apex-hub-v1";
 type Ctx = {
   parts: Part[];
+  commercialMode: CommercialMode;
+  setCommercialMode: (mode: CommercialMode) => void;
   update: (id: string, patch: Partial<Part>, log?: Omit<TimelineEntry, "at" | "by">) => void;
   reset: () => void;
 };
@@ -12,8 +14,11 @@ const HubCtx = createContext<Ctx | null>(null);
 export function HubProvider({ children }: { children: ReactNode }) {
   const [parts, setParts] = useState<Part[]>(() => buildSeed());
   const [loaded, setLoaded] = useState(false);
+  const [commercialMode, setCommercialMode] = useState<CommercialMode>("dual");
   useEffect(() => {
     try {
+      const mode = localStorage.getItem("apex-commercial-mode");
+      if (mode === "dual" || mode === "tiers" || mode === "penalties") setCommercialMode(mode);
       const raw = localStorage.getItem(KEY);
       if (raw) {
         const seed = buildSeed();
@@ -29,6 +34,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loaded) localStorage.setItem(KEY, JSON.stringify(parts));
   }, [parts, loaded]);
+  useEffect(() => { if (loaded) localStorage.setItem("apex-commercial-mode", commercialMode); }, [commercialMode, loaded]);
 
   const [announce, setAnnounce] = useState("");
   const update: Ctx["update"] = (id, patch, log) => {
@@ -51,7 +57,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
     );
   };
   return (
-    <HubCtx.Provider value={{ parts, update, reset: () => { setParts(buildSeed()); setAnnounce("Sample data restored"); } }}>
+    <HubCtx.Provider value={{ parts, commercialMode, setCommercialMode, update, reset: () => { setParts(buildSeed()); setAnnounce("Sample data restored"); } }}>
       {children}
       <div role="status" aria-live="polite" className="sr-only">{announce}</div>
     </HubCtx.Provider>

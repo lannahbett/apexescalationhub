@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { CURRENT_USER, FILTERS, computeKpis, eur, filterParts, initials, type FilterId } from "@/lib/shortages";
+import { COMMERCIAL_MODES, CURRENT_USER, FILTERS, computeCommercialKpis, computeKpis, eur, filterParts, initials, type FilterId } from "@/lib/shortages";
 import { HubProvider, useHub } from "@/components/hub/store";
 import { KanbanBoard, ShortageTable, type Density } from "@/components/hub/board";
 import { PartSheet } from "@/components/hub/part-sheet";
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Hub() {
-  const { parts, reset } = useHub();
+  const { parts, reset, commercialMode, setCommercialMode } = useHub();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<FilterId>("all");
   const [view, setView] = useState<"table" | "kanban">("table");
@@ -41,6 +41,7 @@ function Hub() {
   useEffect(() => { const d = localStorage.getItem("apex-density"); if (d === "compact") setDensity("compact"); }, []);
   const changeDensity = (d: Density) => { setDensity(d); localStorage.setItem("apex-density", d); };
   const k = computeKpis(parts);
+  const commercial = computeCommercialKpis(parts);
   const shown = useMemo(() => filterParts(parts, filter, q), [parts, filter, q]);
   const counts = useMemo(() => Object.fromEntries(FILTERS.map((f) => [f.id, filterParts(parts, f.id, "").length])), [parts]);
 
@@ -49,7 +50,8 @@ function Hub() {
     { label: "Active Shortages", value: `${k.activeCount} parts`, sub: "not yet delivered", icon: Boxes, tone: "text-info" },
     { label: "Assembly Lines at Risk", value: `${k.linesAtRisk} lines`, sub: "impacted inside 48h", icon: Factory, tone: "text-elevated" },
     { label: "Stalled / Low-Confidence", value: `${k.stalledCount} parts`, sub: "no ETA / engineering hold", icon: AlertTriangle, tone: "text-critical" },
-    { label: "Customer Orders Exposed", value: eur(k.customerExposure), sub: "sales orders pegged to open shortages", icon: Users, tone: "text-info" },
+    ...(commercialMode !== "penalties" ? [{ label: "Tier 1 Orders Exposed", value: `${commercial.tier1Orders} orders`, sub: `${commercial.otifOrders} orders with committed-date risk`, icon: Users, tone: "text-info" }] : []),
+    ...(commercialMode !== "tiers" ? [{ label: "Projected SLA Penalties", value: eur(commercial.projectedPenalties), sub: `${eur(commercial.dailyPenalties)}/day at projected delay · demo`, icon: Euro, tone: "text-critical" }] : []),
     { label: "Abnormal Demand", value: `${k.abnormalDemandCount} parts`, sub: "≥30% above 6-week baseline", icon: TrendingUp, tone: "text-elevated" },
   ];
 
@@ -77,7 +79,7 @@ function Hub() {
 
       <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-4">
         <h2 className="sr-only">Key figures</h2>
-        <section aria-label="Key figures" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <section aria-label="Key figures" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
           {kpis.map((x) => (
             <div key={x.label} className="rounded-md border bg-card p-3">
               <div className="flex items-center justify-between">
@@ -109,6 +111,15 @@ function Hub() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              Commercial mode
+              <select aria-label="Commercial mode" value={commercialMode} onChange={(e) => {
+                const mode = COMMERCIAL_MODES.find((m) => m.id === e.target.value);
+                if (mode) setCommercialMode(mode.id);
+              }} className="h-11 min-w-11 max-w-full rounded-md border border-input bg-card px-2 text-foreground">
+                {COMMERCIAL_MODES.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+              </select>
+            </label>
             <BriefingDialog />
             <InboundParserDialog />
             <Button size="icon" variant="ghost" onClick={reset} title="Reset sample data" aria-label="Reset sample data"><RotateCcw aria-hidden className="size-3.5" /></Button>

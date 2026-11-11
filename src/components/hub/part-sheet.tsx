@@ -16,6 +16,7 @@ import { CONFIDENCE, CURRENT_USER, DEMAND_SURGE_THRESHOLD, demandSurgePct, leadT
 import { ConfidencePill, LineStop, PlannerBadge, RiskPill } from "./badges";
 import { StageSelect } from "./board";
 import { useHub } from "./store";
+import { CommercialOrders } from "./commercial-orders";
 
 const kindIcon: Record<TimelineEntry["kind"], typeof Mail> = {
   date: CalendarClock, contact: Phone, note: MessageSquare, confidence: ShieldCheck, stage: Workflow, checklist: ListChecks,
@@ -58,28 +59,7 @@ export function PartSheet({ partId, onClose }: { partId: string | null; onClose:
                 <div className="rounded border bg-muted/50 p-2"><div className="mb-1 text-[10px] uppercase tracking-wide text-muted-foreground">Planner</div><PlannerBadge name={part.planner} /></div>
               </div>
 
-              <section>
-                <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Customer orders at risk · {eur(orderExposure(part))}</h3>
-                {(part.orders ?? []).length === 0 ? <p className="text-xs text-muted-foreground">No sales orders pegged to this part.</p> : (
-                  <ul className="divide-y rounded border">
-                    {part.orders!.map((o) => {
-                      const slip = orderSlipDays(part, o);
-                      return (
-                        <li key={o.so} className="flex flex-wrap items-start justify-between gap-2 p-2.5 text-xs">
-                          <div className="min-w-0">
-                            <div className="font-medium">{o.customer}{o.strategic && <span className="ml-1.5 rounded border px-1 text-[10px] font-semibold uppercase">Strategic</span>}</div>
-                            <div className="font-mono text-[11px] text-muted-foreground">{o.so} · committed {new Date(o.committed).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} · {eur(o.value)}</div>
-                          </div>
-                          <div className="text-right">
-                            <div className={slip > 0 ? "font-semibold text-critical" : "text-success"}>{slip > 0 ? `Slips ${slip}d` : "On track"}</div>
-                            {slip > 0 && o.penaltyPerDay > 0 && <div className="text-[11px] text-muted-foreground">Penalty {eur(o.penaltyPerDay)}/day · {eur(o.penaltyPerDay * slip)}</div>}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </section>
+              <CommercialOrders part={part} />
 
               {(part.demand || part.leadTime) && (
                 <section>
@@ -191,7 +171,7 @@ Material Planning – Apex Manufacturing`;
 }
 
 function EscalationDialog({ part, open, onOpenChange }: { part: Part; open: boolean; onOpenChange: (o: boolean) => void }) {
-  const { update } = useHub();
+  const { update, commercialMode } = useHub();
   const [body, setBody] = useState("");
   const [tone, setTone] = useState<"firm" | "collaborative" | "executive">("firm");
   const [busy, setBusy] = useState(false);
@@ -199,7 +179,7 @@ function EscalationDialog({ part, open, onOpenChange }: { part: Part; open: bool
   const aiDraft = async () => {
     setBusy(true);
     try {
-      const r = await ai({ data: { tone, sender: CURRENT_USER, part: { ...summarize(part), po: part.po, qtyPending: part.qtyPending, uom: part.uom, targetBuild: part.targetBuild } } });
+      const r = await ai({ data: { tone, commercialMode, sender: CURRENT_USER, part: { ...summarize(part, commercialMode), po: part.po, qtyPending: part.qtyPending, uom: part.uom, targetBuild: part.targetBuild } } });
       setBody(r.text);
     } catch (e) { toast.error(e instanceof Error ? e.message : "AI draft failed"); }
     finally { setBusy(false); }

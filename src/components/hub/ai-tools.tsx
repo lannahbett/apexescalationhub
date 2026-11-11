@@ -8,15 +8,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { generateBriefing, parseInboundUpdate } from "@/lib/ai.functions";
 import { sanitizeExtraction, type ProposedChange } from "@/lib/ai-parse";
-import { CONFIDENCE, STAGES, demandSurgePct, leadTimeDriftPct, orderSlipDays, type Part } from "@/lib/shortages";
+import { CONFIDENCE, STAGES, customerTier, commercialVisibility, projectedPenalty, demandSurgePct, leadTimeDriftPct, orderSlipDays, type CommercialMode, type Part } from "@/lib/shortages";
 import { useHub } from "./store";
 
-export const summarize = (p: Part) => ({
+export const summarize = (p: Part, mode: CommercialMode = "dual") => ({
   partNumber: p.partNumber, description: p.description, line: p.line, stage: p.stage, confidence: p.confidence,
   daysLate: p.daysLate, hoursToLineStop: p.hoursToLineStop, valueAtRisk: p.valueAtRisk, riskScore: p.riskScore,
   planner: p.planner, supplier: p.supplier,
   demandSurgePct: demandSurgePct(p.demand), leadTimeDriftPct: leadTimeDriftPct(p.leadTime),
-  customerOrders: (p.orders ?? []).map((o) => ({ so: o.so, customer: o.customer, committed: o.committed.slice(0, 10), value: o.value, slipDays: orderSlipDays(p, o) })),
+  customerOrders: (p.orders ?? []).map((o) => ({ so: o.so, customer: o.customer, committed: o.committed.slice(0, 10), value: o.value, slipDays: orderSlipDays(p, o),
+    ...(commercialVisibility(mode).tiers ? { tier: customerTier(o), otifImpact: o.otifImpact !== false } : {}),
+    ...(commercialVisibility(mode).penalties ? { penaltyPerDay: o.penaltyPerDay, penaltyGraceDays: o.penaltyGraceDays ?? 0, projectedPenalty: projectedPenalty(p, o).total } : {}),
+  })),
 });
 
 const label = (c: ProposedChange, v: string | number) =>
@@ -27,18 +30,18 @@ const label = (c: ProposedChange, v: string | number) =>
 const safeJson = (s: string): unknown => { try { return JSON.parse(s); } catch { return null; } };
 
 export function BriefingDialog() {
-  const { parts } = useHub();
+  const { parts, commercialMode } = useHub();
   const run = useServerFn(generateBriefing);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const go = async () => {
     setBusy(true); setText("");
-    try { setText((await run({ data: { parts: parts.filter((p) => p.stage !== "delivered").map(summarize) } })).text); }
+    try { setText((await run({ data: { commercialMode, parts: parts.filter((p) => p.stage !== "delivered").map((p) => summarize(p, commercialMode)) } })).text); }
     catch (e) { toast.error(e instanceof Error ? e.message : "Briefing failed"); }
     finally { setBusy(false); }
   };
   return (
-    <Dialog onOpenChange={(o) => o && !text && go()}>
+    <Dialog onOpenChange={(o) => o && go()}>
       <DialogTrigger asChild><Button size="sm" variant="secondary"><Sparkles aria-hidden className="size-3.5" /> Standup briefing</Button></DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>

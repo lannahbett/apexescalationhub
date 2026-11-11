@@ -29,25 +29,30 @@ const partSummary = z.object({
   confidence: z.string(), daysLate: z.number(), hoursToLineStop: z.number(), valueAtRisk: z.number(),
   riskScore: z.number(), planner: z.string(), supplier: z.string(),
   demandSurgePct: z.number().optional(), leadTimeDriftPct: z.number().optional(),
-  customerOrders: z.array(z.object({ so: z.string(), customer: z.string(), committed: z.string(), value: z.number(), slipDays: z.number() })).max(10).optional(),
+  customerOrders: z.array(z.object({ so: z.string(), customer: z.string(), committed: z.string(), value: z.number(), slipDays: z.number(),
+    tier: z.enum(["tier1", "tier2", "tier3"]).optional(), otifImpact: z.boolean().optional(),
+    penaltyPerDay: z.number().nonnegative().optional(), penaltyGraceDays: z.number().int().min(0).max(365).optional(), projectedPenalty: z.number().nonnegative().optional(),
+  })).max(10).optional(),
 });
+const commercialMode = z.enum(["dual", "tiers", "penalties"]).default("dual");
+const commercialPrompt = (mode: string) => `Commercial mode: ${mode}. ${mode === "tiers" ? "Discuss priority tiers and committed-date/OTIF risk only; never mention contractual penalties." : mode === "penalties" ? "Discuss supplied projected contractual penalties only; never mention priority tiers or OTIF." : "Discuss supplied priority tiers, committed-date/OTIF risk and projected penalties."} Penalties are forecasts after the supplied grace period, not accrued charges. Never imply our customer penalty terms bind the supplier. Do not infer in-full performance or an actual OTIF score.`;
 
 export const generateBriefing = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ parts: z.array(partSummary).max(200) }).parse(d))
+  .inputValidator((d: unknown) => z.object({ parts: z.array(partSummary).max(200), commercialMode }).parse(d))
   .handler(async ({ data }) => {
     const text = await groq(
       "You are a senior material planning lead preparing a 60-second morning standup briefing for a manufacturing plant. Use ONLY the data given; never invent parts, numbers, dates or suppliers. Format: 'Top risks' (max 3 bullets, part number, line, hours to line stop, € at risk), 'Stalled cases' (bullets), 'Customer impact' (orders with slipDays>0: customer, SO, committed date), 'Demand & lead-time alerts' (demandSurgePct>=30 or leadTimeDriftPct>=50), 'Decisions needed today' (max 3 bullets). Plain text, concise.",
-      JSON.stringify(data.parts),
+      JSON.stringify({ instruction: commercialPrompt(data.commercialMode), parts: data.parts }),
     );
     return { text };
   });
 
 export const draftEscalation = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
-    z.object({ part: partSummary.extend({ po: z.string(), qtyPending: z.number(), uom: z.string(), targetBuild: z.string() }), tone: z.enum(["firm", "collaborative", "executive"]), sender: z.string() }).parse(d))
+    z.object({ part: partSummary.extend({ po: z.string(), qtyPending: z.number(), uom: z.string(), targetBuild: z.string() }), commercialMode, tone: z.enum(["firm", "collaborative", "executive"]), sender: z.string() }).parse(d))
   .handler(async ({ data }) => {
     const text = await groq(
-      `Write a supplier expedite escalation email in a ${data.tone} tone. Use ONLY the facts provided; do not invent tracking numbers, prices or commitments. Start with 'Subject: '. Request a confirmed ship date with tracking within 24 hours and partial-shipment options. Sign as ${data.sender}, Material Planning – Apex Manufacturing.`,
+      `Write a supplier expedite escalation email in a ${data.tone} tone. Use ONLY the facts provided; do not invent tracking numbers, prices or commitments. ${commercialPrompt(data.commercialMode)} Start with 'Subject: '. Request a confirmed ship date with tracking within 24 hours and partial-shipment options. Sign as ${data.sender}, Material Planning – Apex Manufacturing.`,
       JSON.stringify(data.part),
     );
     return { text };
