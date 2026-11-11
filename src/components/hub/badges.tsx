@@ -14,7 +14,7 @@ export function RiskPill({ score, showLabel = true }: { score: number; showLabel
   const t = riskTier(score);
   const Icon = tierIcon[t];
   return (
-    <span aria-label={`Risk ${score}, ${tierLabel[t]}`} title={tierLabel[t]} className={cn("inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold", tierCls[t])}>
+    <span role="img" aria-label={`Risk ${score}, ${tierLabel[t]}`} title={tierLabel[t]} className={cn("inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold", tierCls[t])}>
       <Icon aria-hidden className="size-3 fill-current" />
       <span aria-hidden>{score}</span>
       {showLabel && <span aria-hidden className="font-sans font-medium uppercase tracking-wide text-[10px]">{tierLabel[t]}</span>}

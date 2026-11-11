@@ -33,12 +33,12 @@ export function ImportDialog() {
         <label
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) read(f); }}
-          className="flex cursor-pointer flex-col items-center gap-2 rounded-md border-2 border-dashed p-8 text-center hover:bg-muted"
+          className="relative flex cursor-pointer flex-col items-center gap-2 rounded-md border-2 border-dashed p-8 text-center hover:bg-muted"
         >
           <FileSpreadsheet className="size-8 text-muted-foreground" />
-          <span className="text-sm font-medium">{name || "Drop CSV here or click to browse"}</span>
+          <span className="max-w-full break-all text-sm font-medium">{name || "Drop CSV here or click to browse"}</span>
           <span className="text-xs text-muted-foreground">SAP MD04 / Oracle shortage export, comma-separated</span>
-          <input type="file" accept=".csv" className="hidden" onChange={(e) => e.target.files?.[0] && read(e.target.files[0])} />
+          <input type="file" accept=".csv" aria-label="Choose ERP CSV file" className="absolute inset-0 h-full w-full cursor-pointer opacity-0 focus-visible:opacity-100" onChange={(e) => e.target.files?.[0] && read(e.target.files[0])} />
         </label>
         {rows && (
           <div className="max-h-56 overflow-auto rounded border">

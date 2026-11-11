@@ -54,10 +54,10 @@ function Hub() {
     <div className="min-h-dvh">
       <a href="#board" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-card focus:px-3 focus:py-2 focus:text-xs">Skip to shortage board</a>
       <header className="bg-sidebar text-sidebar-foreground">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3">
-          <div className="flex items-center gap-2.5">
-            <div className="grid size-8 place-items-center rounded bg-sidebar-primary text-sidebar-primary-foreground"><Zap aria-hidden className="size-4" /></div>
-            <div>
+        <div className="mx-auto grid grid-cols-[minmax(0,1fr)_auto] sm:flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="grid size-8 shrink-0 place-items-center rounded bg-sidebar-primary text-sidebar-primary-foreground"><Zap aria-hidden className="size-4" /></div>
+            <div className="min-w-0">
               <h1 className="text-sm font-semibold leading-tight">Apex Escalation Hub</h1>
               <div className="text-[11px] text-sidebar-foreground/80">Morning standup · {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</div>
             </div>
@@ -79,7 +79,7 @@ function Hub() {
             <div key={x.label} className="rounded-md border bg-card p-3">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{x.label}</span>
-                <x.icon aria-hidden className={cn("size-4", x.tone)} />
+                <x.icon aria-hidden className={cn("size-4 shrink-0", x.tone)} />
               </div>
               <div className="mt-1 font-mono text-xl font-semibold">{x.value}</div>
               <div className="text-[11px] text-muted-foreground">{x.sub}</div>
@@ -91,36 +91,36 @@ function Hub() {
           <div className="flex flex-col gap-2 md:flex-row md:items-center">
             <div className="relative md:w-72">
               <Search aria-hidden className="absolute left-2.5 top-2 size-4 text-muted-foreground" />
-              <Input value={q} onChange={(e) => setQ(e.target.value)} type="search" aria-label="Search part, planner or component" placeholder="Search part, planner, component…" className="h-9 bg-card pl-8 text-xs" />
+              <Input value={q} onChange={(e) => setQ(e.target.value)} type="search" aria-label="Search part, planner or component" placeholder="Search part, planner, component…" className="h-11 bg-card pl-8 text-xs" />
             </div>
             <div role="group" aria-label="Filters" className="flex flex-wrap gap-1.5">
               {FILTERS.map((f) => (
-                <button type="button" key={f.id} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}
-                  className={cn("inline-flex items-center gap-1.5 min-h-8 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                <Button variant="ghost" type="button" key={f.id} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}
+                  className={cn("inline-flex items-center gap-1.5 min-h-11 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
                     filter === f.id ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-accent")}>
                   {f.label}
                   <span className="sr-only">, </span>
                   <span className={cn("rounded-full px-1.5 font-mono text-[10px]", filter === f.id ? "bg-primary-foreground/20" : "bg-muted")}>{counts[f.id]}</span>
-                </button>
+                </Button>
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="ghost" onClick={reset} title="Reset sample data" aria-label="Reset sample data"><RotateCcw aria-hidden className="size-3.5" /></Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="icon" variant="ghost" onClick={reset} title="Reset sample data" aria-label="Reset sample data"><RotateCcw aria-hidden className="size-3.5" /></Button>
             <div role="group" aria-label="Row density" className="inline-flex rounded-md border bg-card p-0.5">
               {([["standard", Rows3, "Standard"], ["compact", Rows4, "Compact"]] as const).map(([id, Icon, label]) => (
-                <button type="button" key={id} aria-pressed={density === id} onClick={() => changeDensity(id)} title={`${label} rows`}
-                  className={cn("inline-flex min-h-8 items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium", density === id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
+                <Button variant="ghost" type="button" key={id} aria-pressed={density === id} onClick={() => changeDensity(id)} title={`${label} rows`}
+                  className={cn("inline-flex min-h-11 items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium", density === id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
                   <Icon aria-hidden className="size-3.5" /> {label}
-                </button>
+                </Button>
               ))}
             </div>
             <div role="group" aria-label="View" className="inline-flex rounded-md border bg-card p-0.5">
               {([["table", Table2, "Table"], ["kanban", Kanban, "Kanban"]] as const).map(([id, Icon, label]) => (
-                <button type="button" key={id} aria-pressed={view === id} onClick={() => setView(id)}
-                  className={cn("inline-flex min-h-8 items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium", view === id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
+                <Button variant="ghost" type="button" key={id} aria-pressed={view === id} onClick={() => setView(id)}
+                  className={cn("inline-flex min-h-11 items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium", view === id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
                   <Icon aria-hidden className="size-3.5" /> {label}
-                </button>
+                </Button>
               ))}
             </div>
           </div>

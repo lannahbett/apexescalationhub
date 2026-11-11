@@ -1,11 +1,11 @@
 import { useState } from "react";
 import type React from "react";
 import { ArrowUpDown, GripVertical } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { STAGES, eur, type Part, type Stage } from "@/lib/shortages";
 import { ConfidencePill, LineStop, PlannerBadge, RiskPill, StageBadge } from "./badges";
 import { useHub } from "./store";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 
@@ -20,12 +20,12 @@ export function ShortageTable({ parts, onOpen, density = "standard" }: { parts: 
   const rows = [...parts].sort((a, b) => b[sort] - a[sort]);
   const th = "px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground";
   const SortBtn = ({ k, label }: { k: typeof sort; label: string }) => (
-    <button type="button" onClick={() => setSort(k)} aria-label={`Sort by ${label}`} className={cn("inline-flex items-center gap-1 uppercase", sort === k && "text-foreground")}>
+    <Button variant="ghost" type="button" onClick={() => setSort(k)} aria-label={`Sort by ${label}`} className={cn("inline-flex min-h-11 min-w-11 items-center gap-1 px-0 text-[11px] uppercase", sort === k && "text-foreground")}>
       {label} <ArrowUpDown aria-hidden className="size-3" />
-    </button>
+    </Button>
   );
   return (
-    <div className="overflow-x-auto rounded-md border bg-card">
+    <div role="region" aria-label="Scrollable shortage table" tabIndex={0} className="max-w-full overflow-x-auto rounded-md border bg-card">
       <table aria-label={`Shortages, ${rows.length} parts`} data-density={density} className="w-full min-w-[1150px] border-collapse">
         <thead className="border-b bg-muted">
           <tr>
@@ -74,20 +74,21 @@ export function ShortageTable({ parts, onOpen, density = "standard" }: { parts: 
 export function StageSelect({ part, className }: { part: Part; className?: string }) {
   const { update } = useHub();
   return (
-    <Select
+    <select
+      aria-label={`Move ${part.partNumber} to stage`}
+      className={cn("h-11 w-full rounded-md border border-input bg-card px-3 text-xs text-foreground", className)}
       value={part.stage}
-      onValueChange={(v) => {
-        const s = STAGES.find((x) => x.id === v)!;
-        update(part.id, { stage: v as Stage }, { kind: "stage", text: `Stage moved to ${s.n}. ${s.label}` });
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}
+      onChange={(e) => {
+        const v = e.target.value;
+        const s = STAGES.find((x) => x.id === v);
+        if (!s) return;
+        update(part.id, { stage: s.id }, { kind: "stage", text: `Stage moved to ${s.n}. ${s.label}` });
       }}
     >
-      <SelectTrigger aria-label={`Move ${part.partNumber} to stage`} className={cn("h-8 text-xs", className)} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {STAGES.map((s) => <SelectItem key={s.id} value={s.id} className="text-xs">{s.n}. {s.label}</SelectItem>)}
-      </SelectContent>
-    </Select>
+      {STAGES.map((s) => <option key={s.id} value={s.id}>{s.n}. {s.label}</option>)}
+    </select>
   );
 }
 
@@ -125,13 +126,9 @@ export function KanbanBoard({ parts, onOpen }: { parts: Part[]; onOpen: (id: str
                   key={p.id}
                   draggable
                   onDragStart={(e) => e.dataTransfer.setData("text/plain", p.id)}
-                  tabIndex={0}
-                  role="button"
-                  aria-label={`${p.partNumber}, ${p.description}, ${eur(p.valueAtRisk)} at risk. Press Enter for details; use the stage menu to move`}
-                  onClick={() => onOpen(p.id)}
-                  onKeyDown={openKey(() => onOpen(p.id))}
-                  className="group cursor-pointer rounded border bg-card p-2.5 shadow-sm hover:border-ring"
+                  className="group rounded border bg-card p-2.5 shadow-sm hover:border-ring"
                 >
+                  <Button variant="ghost" aria-label={`Open ${p.partNumber}, ${p.description}, ${eur(p.valueAtRisk)} at risk`} onClick={() => onOpen(p.id)} className="block h-auto min-h-11 w-full whitespace-normal p-0 text-left font-normal">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-1">
                       <GripVertical aria-hidden className="size-3.5 text-muted-foreground" />
@@ -147,6 +144,7 @@ export function KanbanBoard({ parts, onOpen }: { parts: Part[]; onOpen: (id: str
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <ConfidencePill value={p.confidence} />
                   </div>
+                  </Button>
                   <StageSelect part={p} className="mt-2 w-full" />
                 </div>
               ))}

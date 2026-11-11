@@ -29,3 +29,6 @@ use the editor.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
 - Board data lives in a client-side store (src/components/hub/store.tsx) persisted to localStorage, seeded from src/lib/shortages.ts; no backend yet, so keep business rules (risk tiers, KPIs, filters) in shortages.ts where tests cover them.
+
+- Maintain 44px minimum primary control targets and bounded horizontal board scrolling; shared primitives enforce usable phone targets without changing business rules.
+- Use a native select for workflow stages and a separate Button for Kanban details; this avoids nested controls and hidden-but-focusable content from the previous popup.

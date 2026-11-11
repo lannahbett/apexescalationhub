@@ -30,10 +30,10 @@ export function PartSheet({ partId, onClose }: { partId: string | null; onClose:
       <SheetContent className="w-full overflow-y-auto p-0 sm:max-w-xl">
         {part && (
           <>
-            <SheetHeader className="border-b bg-sidebar p-5 text-sidebar-foreground">
+            <SheetHeader className="border-b bg-sidebar p-5 pr-16 text-sidebar-foreground">
               <div className="flex items-center gap-2"><RiskPill score={part.riskScore} /><ConfidencePill value={part.confidence} /></div>
               <SheetTitle className="font-mono text-lg text-sidebar-foreground">{part.partNumber}</SheetTitle>
-              <SheetDescription className="text-sidebar-foreground/70">{part.description} · {part.category}</SheetDescription>
+              <SheetDescription className="text-sidebar-foreground/90">{part.description} · {part.category}</SheetDescription>
             </SheetHeader>
             <div className="space-y-5 p-5">
               <div className="grid grid-cols-2 gap-3 text-xs">
@@ -59,7 +59,7 @@ export function PartSheet({ partId, onClose }: { partId: string | null; onClose:
                 <StageSelect part={part} />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <Button size="sm" onClick={() => setEmailOpen(true)}><Send className="size-3.5" /> Draft Supplier Escalation</Button>
                 <Button size="sm" variant="outline" onClick={() => setConfOpen(true)}><Gauge className="size-3.5" /> Update Fix Confidence</Button>
               </div>
@@ -68,8 +68,8 @@ export function PartSheet({ partId, onClose }: { partId: string | null; onClose:
                 <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Mitigation checklist</h3>
                 <div className="space-y-1.5 rounded border p-3">
                   {part.checklist.map((c) => (
-                    <label key={c.id} className="flex cursor-pointer items-center gap-2 text-xs">
-                      <Checkbox
+                    <label key={c.id} className="flex min-h-11 cursor-pointer items-center gap-2 text-xs">
+                      <Checkbox className="size-11"
                         checked={c.done}
                         onCheckedChange={(v) =>
                           update(part.id, { checklist: part.checklist.map((x) => (x.id === c.id ? { ...x, done: !!v } : x)) },
@@ -88,7 +88,7 @@ export function PartSheet({ partId, onClose }: { partId: string | null; onClose:
                   e.preventDefault(); if (!note.trim()) return;
                   update(part.id, {}, { kind: "note", text: note.trim() }); setNote("");
                 }}>
-                  <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add a note or supplier contact…" className="h-8 text-xs" />
+                  <Input aria-label="Audit timeline note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add a note or supplier contact…" className="h-11 min-w-0 text-xs" />
                   <Button size="sm" type="submit" variant="secondary">Log</Button>
                 </form>
                 <ol className="relative space-y-3 border-l pl-4">
@@ -152,7 +152,7 @@ function EscalationDialog({ part, open, onOpenChange }: { part: Part; open: bool
           <DialogTitle>Supplier escalation draft</DialogTitle>
           <DialogDescription>To: {part.supplierContact}</DialogDescription>
         </DialogHeader>
-        <Textarea value={body} onChange={(e) => setBody(e.target.value)} className="h-80 font-mono text-xs" />
+        <Textarea aria-label="Supplier escalation email" value={body} onChange={(e) => setBody(e.target.value)} className="h-80 font-mono text-xs" />
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => { navigator.clipboard.writeText(body); toast.success("Email copied to clipboard"); }}><Copy className="size-3.5" /> Copy</Button>
           <Button onClick={() => {
@@ -177,15 +177,15 @@ function ConfidenceDialog({ part, open, onOpenChange }: { part: Part; open: bool
           <DialogTitle>Update fix confidence</DialogTitle>
           <DialogDescription>A note is required for the audit trail.</DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           {(Object.keys(CONFIDENCE) as Confidence[]).map((c) => (
-            <button type="button" key={c} aria-pressed={val === c} onClick={() => setVal(c)} className={cn("rounded border p-2 text-left", val === c ? "border-ring bg-accent" : "hover:bg-muted")}>
+            <Button variant="ghost" type="button" key={c} aria-pressed={val === c} onClick={() => setVal(c)} className={cn("h-auto min-h-11 flex-col items-start whitespace-normal rounded border p-2 text-left", val === c ? "border-ring bg-accent" : "hover:bg-muted")}>
               <ConfidencePill value={c} />
               <div className="mt-1 text-[11px] text-muted-foreground">{CONFIDENCE[c].hint}</div>
-            </button>
+            </Button>
           ))}
         </div>
-        <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Why is confidence changing? (required)" className="text-xs" />
+        <Textarea aria-label="Reason for confidence change" required value={note} onChange={(e) => setNote(e.target.value)} placeholder="Why is confidence changing? (required)" className="text-xs" />
         <DialogFooter>
           <Button disabled={!note.trim()} onClick={() => {
             update(part.id, { confidence: val }, { kind: "confidence", text: `Confidence set to ${CONFIDENCE[val].label} — ${note.trim()}` });
