@@ -32,3 +32,4 @@ use the editor.
 
 - Maintain 44px minimum primary control targets and bounded horizontal board scrolling; shared primitives enforce usable phone targets without changing business rules.
 - Use a native select for workflow stages and a separate Button for Kanban details; this avoids nested controls and hidden-but-focusable content from the previous popup.
+- AI calls go through server functions in src/lib/ai.functions.ts using the GROQ_API_KEY secret; model output that changes board data must pass sanitizeExtraction (src/lib/ai-parse.ts) and explicit planner confirmation, so the AI never edits parts on its own.
