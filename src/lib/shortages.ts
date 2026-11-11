@@ -45,6 +45,28 @@ export interface Part {
   stage: Stage;
   timeline: TimelineEntry[];
   checklist: ChecklistItem[];
+  orders?: CustomerOrder[] | undefined;
+  demand?: DemandSignal | undefined;
+  leadTime?: LeadTimeSignal | undefined;
+}
+
+export interface CustomerOrder { so: string; customer: string; strategic: boolean; committed: string; value: number; penaltyPerDay: number }
+export interface DemandSignal { baselineWeekly: number; actualWeekly: number; driver: string }
+export interface LeadTimeSignal { erpDays: number; actualDays: number; otdPct: number }
+
+/** Abnormal demand = actual weekly consumption ≥ 30% above the 6-week baseline. */
+export const DEMAND_SURGE_THRESHOLD = 30;
+export const demandSurgePct = (d?: DemandSignal | undefined) =>
+  !d || d.baselineWeekly <= 0 ? 0 : Math.round(((d.actualWeekly - d.baselineWeekly) / d.baselineWeekly) * 100);
+export const isAbnormalDemand = (d?: DemandSignal | undefined) => demandSurgePct(d) >= DEMAND_SURGE_THRESHOLD;
+export const leadTimeDriftPct = (l?: LeadTimeSignal | undefined) =>
+  !l || l.erpDays <= 0 ? 0 : Math.round(((l.actualDays - l.erpDays) / l.erpDays) * 100);
+/** Customer order value blocked by this part. */
+export const orderExposure = (p: Part) => (p.orders ?? []).reduce((s, o) => s + o.value, 0);
+/** Days the projected availability (target build + days late) overshoots an order's committed date; 0 if safe. */
+export function orderSlipDays(p: Part, o: CustomerOrder) {
+  const ready = new Date(p.targetBuild).getTime() + p.daysLate * 86400000;
+  return Math.max(0, Math.ceil((ready - new Date(o.committed).getTime()) / 86400000));
 }
 
 export const CURRENT_USER = "Sarah M.";
@@ -60,6 +82,8 @@ export function computeKpis(parts: Part[]) {
   return {
     valueAtRisk: active.reduce((s, p) => s + p.valueAtRisk, 0),
     activeCount: active.length,
+    abnormalDemandCount: active.filter((p) => isAbnormalDemand(p.demand)).length,
+    customerExposure: active.reduce((s, p) => s + orderExposure(p), 0),
     linesAtRisk: new Set(active.filter((p) => p.hoursToLineStop <= 48).map((p) => p.line)).size,
     stalledCount: active.filter((p) => p.confidence === "stalled").length,
   };
@@ -105,6 +129,36 @@ const seeds: Seed[] = [
   { partNumber: "PN-6650-IO", description: "EtherCAT I/O Coupler 16DI", category: "Control Systems", line: "Line A - Robotics", buildIn: 5, hoursToLineStop: 118, daysLate: 1, valueAtRisk: 43000, qtyPending: 150, uom: "pcs", planner: "Marco R.", supplier: "Nordwave Electronics AB", supplierContact: "orders@nordwave.se", po: "PO-4500220559", riskScore: 47, confidence: "high", stage: "delivered" },
 ];
 
+const CUSTOMERS: [string, boolean][] = [
+  ["Siemens Healthineers", true], ["Bosch Rexroth", true], ["ASML", true], ["Krones AG", false],
+  ["Festo SE", false], ["Trumpf GmbH", true], ["Philips Medical", false], ["Vestas Wind", false],
+];
+const DRIVERS = ["Customer bulk order", "Unplanned line ramp-up", "Scrap / yield anomaly", "Safety-stock pull", "ECO revision pull-in", "Forecast in line"];
+
+/** Deterministic commercial + demand + lead-time signals per seed index (no randomness). */
+export function seedSignals(i: number, s: { daysLate: number; valueAtRisk: number; buildIn: number }) {
+  const n = 1 + (i % 3);
+  const orders: CustomerOrder[] = Array.from({ length: n }, (_, k) => {
+    const [customer, strategic] = CUSTOMERS[(i * 3 + k) % CUSTOMERS.length]!;
+    return {
+      so: `SO-${9900 + i * 7 + k}`, customer, strategic,
+      committed: day(s.buildIn + 2 + k * 3 - (i % 2) * 3, 12),
+      value: Math.round((s.valueAtRisk * (1.6 - k * 0.4)) / 100) * 100,
+      penaltyPerDay: strategic ? 2500 + (i % 4) * 1250 : 0,
+    };
+  });
+  const baselineWeekly = 40 + i * 15;
+  const surge = [85, 12, 46, 5, 34, -8, 62, 0, 18, 41, 3, 9, 25, -4][i % 14]!;
+  const demand: DemandSignal = {
+    baselineWeekly,
+    actualWeekly: Math.round(baselineWeekly * (1 + surge / 100)),
+    driver: surge >= DEMAND_SURGE_THRESHOLD ? DRIVERS[i % 5]! : DRIVERS[5]!,
+  };
+  const erpDays = 10 + (i % 4) * 4;
+  const leadTime: LeadTimeSignal = { erpDays, actualDays: erpDays + s.daysLate * 2 + (i % 3), otdPct: Math.max(48, 96 - s.daysLate * 5 - (i % 3) * 3) };
+  return { orders, demand, leadTime };
+}
+
 export function buildSeed(): Part[] {
   return seeds.map((s, i) => {
     const { buildIn, done = [], ...rest } = s;
@@ -118,19 +172,21 @@ export function buildSeed(): Part[] {
       ...rest,
       id: `p${i + 1}`,
       targetBuild: day(buildIn),
+      ...seedSignals(i, s),
       timeline: timeline.reverse(),
       checklist: defaultChecklist().map((c) => ({ ...c, done: done.includes(c.id) })),
     };
   });
 }
 
-export type FilterId = "all" | "critical" | "stalled" | "mine" | "due48";
+export type FilterId = "all" | "critical" | "stalled" | "mine" | "due48" | "demand";
 export const FILTERS: { id: FilterId; label: string }[] = [
   { id: "all", label: "All" },
   { id: "critical", label: "Line Down / Critical" },
   { id: "stalled", label: "Stalled Confidence" },
   { id: "mine", label: `My Parts (${CURRENT_USER})` },
   { id: "due48", label: "Due < 48h" },
+  { id: "demand", label: "Abnormal Demand" },
 ];
 
 export function filterParts(parts: Part[], filter: FilterId, q: string) {
@@ -140,8 +196,9 @@ export function filterParts(parts: Part[], filter: FilterId, q: string) {
     if (filter === "stalled" && p.confidence !== "stalled") return false;
     if (filter === "mine" && p.planner !== CURRENT_USER) return false;
     if (filter === "due48" && p.hoursToLineStop > 48) return false;
+    if (filter === "demand" && !isAbnormalDemand(p.demand)) return false;
     if (!query) return true;
-    return [p.partNumber, p.planner, p.description, p.category].some((v) => v.toLowerCase().includes(query));
+    return [p.partNumber, p.planner, p.description, p.category, ...(p.orders ?? []).flatMap((o) => [o.customer, o.so])].some((v) => v.toLowerCase().includes(query));
   });
 }
 

@@ -28,13 +28,15 @@ const partSummary = z.object({
   partNumber: z.string(), description: z.string(), line: z.string(), stage: z.string(),
   confidence: z.string(), daysLate: z.number(), hoursToLineStop: z.number(), valueAtRisk: z.number(),
   riskScore: z.number(), planner: z.string(), supplier: z.string(),
+  demandSurgePct: z.number().optional(), leadTimeDriftPct: z.number().optional(),
+  customerOrders: z.array(z.object({ so: z.string(), customer: z.string(), committed: z.string(), value: z.number(), slipDays: z.number() })).max(10).optional(),
 });
 
 export const generateBriefing = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ parts: z.array(partSummary).max(200) }).parse(d))
   .handler(async ({ data }) => {
     const text = await groq(
-      "You are a senior material planning lead preparing a 60-second morning standup briefing for a manufacturing plant. Use ONLY the data given; never invent parts, numbers, dates or suppliers. Format: 'Top risks' (max 3 bullets, part number, line, hours to line stop, € at risk), 'Stalled cases' (bullets), 'Decisions needed today' (max 3 bullets). Plain text, concise.",
+      "You are a senior material planning lead preparing a 60-second morning standup briefing for a manufacturing plant. Use ONLY the data given; never invent parts, numbers, dates or suppliers. Format: 'Top risks' (max 3 bullets, part number, line, hours to line stop, € at risk), 'Stalled cases' (bullets), 'Customer impact' (orders with slipDays>0: customer, SO, committed date), 'Demand & lead-time alerts' (demandSurgePct>=30 or leadTimeDriftPct>=50), 'Decisions needed today' (max 3 bullets). Plain text, concise.",
       JSON.stringify(data.parts),
     );
     return { text };

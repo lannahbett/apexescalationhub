@@ -1,6 +1,6 @@
-import { AlertTriangle, CheckCircle2, Circle, Diamond, OctagonX, Triangle } from "lucide-react";
+import { AlertTriangle, TrendingUp, Timer, CheckCircle2, Circle, Diamond, OctagonX, Triangle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CONFIDENCE, STAGES, initials, riskTier, type Confidence, type Stage } from "@/lib/shortages";
+import { CONFIDENCE, STAGES, initials, riskTier, demandSurgePct, isAbnormalDemand, leadTimeDriftPct, type Confidence, type Stage, type DemandSignal, type LeadTimeSignal } from "@/lib/shortages";
 
 const tierCls = {
   critical: "bg-critical text-primary-foreground",
@@ -71,5 +71,24 @@ export function LineStop({ hours, daysLate }: { hours: number; daysLate: number 
         Line stop in {hours < 48 ? `${hours}h` : `${Math.round(hours / 24)}d`}
       </div>
     </div>
+  );
+}
+
+export function DemandChip({ demand }: { demand?: DemandSignal | undefined }) {
+  if (!isAbnormalDemand(demand)) return null;
+  return (
+    <span className="inline-flex items-center gap-1 rounded border border-elevated/40 bg-elevated-soft px-1.5 py-0.5 text-[10px] font-semibold text-elevated">
+      <TrendingUp aria-hidden className="size-3" />+{demandSurgePct(demand)}% demand
+    </span>
+  );
+}
+
+export function LeadTimeChip({ lt }: { lt?: LeadTimeSignal | undefined }) {
+  if (!lt) return null;
+  const drift = leadTimeDriftPct(lt);
+  return (
+    <span className={cn("inline-flex items-center gap-1 font-mono text-[10px]", drift >= 50 ? "font-semibold text-critical" : "text-muted-foreground")}>
+      <Timer aria-hidden className="size-3" />LT {lt.erpDays}d ERP → {lt.actualDays}d actual
+    </span>
   );
 }

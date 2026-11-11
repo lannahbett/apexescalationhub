@@ -3,8 +3,8 @@ import type React from "react";
 import { ArrowUpDown, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { STAGES, eur, type Part, type Stage } from "@/lib/shortages";
-import { ConfidencePill, LineStop, PlannerBadge, RiskPill, StageBadge } from "./badges";
+import { STAGES, eur, orderExposure, type Part, type Stage } from "@/lib/shortages";
+import { ConfidencePill, DemandChip, LeadTimeChip, LineStop, PlannerBadge, RiskPill, StageBadge } from "./badges";
 import { useHub } from "./store";
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
@@ -47,15 +47,20 @@ export function ShortageTable({ parts, onOpen, density = "standard" }: { parts: 
                 <div className="font-mono text-xs font-semibold">{p.partNumber}</div>
                 <div className="text-xs">{p.description}</div>
                 <div className="text-[11px] text-muted-foreground">{p.category}</div>
+                <div className="mt-1"><DemandChip demand={p.demand} /></div>
               </td>
               <td className="px-3 text-xs">
                 <div className="font-medium">{p.line}</div>
                 <div className="text-muted-foreground">Build {fmtDate(p.targetBuild)}</div>
               </td>
-              <td className="px-3 text-right font-mono text-xs font-semibold">{eur(p.valueAtRisk)}</td>
+              <td className="px-3 text-right font-mono text-xs">
+                <div className="font-semibold">{eur(p.valueAtRisk)}</div>
+                {(p.orders?.length ?? 0) > 0 && <div className="text-[11px] text-muted-foreground">{p.orders!.length} SO · {eur(orderExposure(p))}</div>}
+              </td>
               <td className="px-3">
                 <div className="font-mono text-xs">{p.qtyPending.toLocaleString()} {p.uom}</div>
                 <LineStop hours={p.hoursToLineStop} daysLate={p.daysLate} />
+                <LeadTimeChip lt={p.leadTime} />
               </td>
               <td className="px-3"><PlannerBadge name={p.planner} /></td>
               <td className="px-3"><ConfidencePill value={p.confidence} /></td>
@@ -143,6 +148,7 @@ export function KanbanBoard({ parts, onOpen }: { parts: Part[]; onOpen: (id: str
                   </div>
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <ConfidencePill value={p.confidence} />
+                    <DemandChip demand={p.demand} />
                   </div>
                   </Button>
                   <StageSelect part={p} className="mt-2 w-full" />

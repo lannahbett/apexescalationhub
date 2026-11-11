@@ -15,7 +15,14 @@ export function HubProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) setParts(JSON.parse(raw));
+      if (raw) {
+        const seed = buildSeed();
+        // Backfill new signal fields onto boards saved before they existed, keeping planner edits.
+        setParts((JSON.parse(raw) as Part[]).map((p) => {
+          const s = seed.find((x) => x.id === p.id);
+          return { ...p, orders: p.orders ?? s?.orders ?? [], demand: p.demand ?? s?.demand, leadTime: p.leadTime ?? s?.leadTime };
+        }));
+      }
     } catch {}
     setLoaded(true);
   }, []);

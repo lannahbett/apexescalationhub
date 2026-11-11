@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { CONFIDENCE, CURRENT_USER, eur, type Confidence, type Part, type TimelineEntry } from "@/lib/shortages";
+import { CONFIDENCE, CURRENT_USER, DEMAND_SURGE_THRESHOLD, demandSurgePct, leadTimeDriftPct, orderExposure, orderSlipDays, eur, type Confidence, type Part, type TimelineEntry } from "@/lib/shortages";
 import { ConfidencePill, LineStop, PlannerBadge, RiskPill } from "./badges";
 import { StageSelect } from "./board";
 import { useHub } from "./store";
@@ -57,6 +57,50 @@ export function PartSheet({ partId, onClose }: { partId: string | null; onClose:
                 <div className="rounded border bg-muted/50 p-2"><div className="text-[10px] uppercase tracking-wide text-muted-foreground">Status</div><LineStop hours={part.hoursToLineStop} daysLate={part.daysLate} /></div>
                 <div className="rounded border bg-muted/50 p-2"><div className="mb-1 text-[10px] uppercase tracking-wide text-muted-foreground">Planner</div><PlannerBadge name={part.planner} /></div>
               </div>
+
+              <section>
+                <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Customer orders at risk · {eur(orderExposure(part))}</h3>
+                {(part.orders ?? []).length === 0 ? <p className="text-xs text-muted-foreground">No sales orders pegged to this part.</p> : (
+                  <ul className="divide-y rounded border">
+                    {part.orders!.map((o) => {
+                      const slip = orderSlipDays(part, o);
+                      return (
+                        <li key={o.so} className="flex flex-wrap items-start justify-between gap-2 p-2.5 text-xs">
+                          <div className="min-w-0">
+                            <div className="font-medium">{o.customer}{o.strategic && <span className="ml-1.5 rounded border px-1 text-[10px] font-semibold uppercase">Strategic</span>}</div>
+                            <div className="font-mono text-[11px] text-muted-foreground">{o.so} · committed {new Date(o.committed).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} · {eur(o.value)}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className={slip > 0 ? "font-semibold text-critical" : "text-success"}>{slip > 0 ? `Slips ${slip}d` : "On track"}</div>
+                            {slip > 0 && o.penaltyPerDay > 0 && <div className="text-[11px] text-muted-foreground">Penalty {eur(o.penaltyPerDay)}/day · {eur(o.penaltyPerDay * slip)}</div>}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </section>
+
+              {(part.demand || part.leadTime) && (
+                <section>
+                  <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Demand & lead-time radar</h3>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    {part.demand && (() => { const pct = demandSurgePct(part.demand); return (
+                      <div className="rounded border bg-muted/50 p-2">
+                        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Weekly demand</div>
+                        <div className="font-mono font-medium">{part.demand.actualWeekly} vs {part.demand.baselineWeekly} baseline</div>
+                        <div className={pct >= DEMAND_SURGE_THRESHOLD ? "font-semibold text-elevated" : "text-muted-foreground"}>{pct > 0 ? "+" : ""}{pct}% · {part.demand.driver}</div>
+                      </div>); })()}
+                    {part.leadTime && (() => { const d = leadTimeDriftPct(part.leadTime); return (
+                      <div className="rounded border bg-muted/50 p-2">
+                        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Lead time</div>
+                        <div className="font-mono font-medium">{part.leadTime.erpDays}d ERP → {part.leadTime.actualDays}d actual</div>
+                        <div className={d >= 50 ? "font-semibold text-critical" : "text-muted-foreground"}>+{d}% drift · supplier OTD {part.leadTime.otdPct}%</div>
+                      </div>); })()}
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">Sample signals — will come from ERP once imports are live.</p>
+                </section>
+              )}
 
               <div>
                 <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Workflow stage</div>

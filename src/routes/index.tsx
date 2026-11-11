@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Boxes, Euro, Factory, Kanban, Rows3, Rows4, RotateCcw, Search, Table2, Zap } from "lucide-react";
+import { AlertTriangle, Boxes, Euro, Factory, Kanban, Rows3, Rows4, RotateCcw, Search, Table2, Zap, TrendingUp, Users } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,8 @@ function Hub() {
     { label: "Active Shortages", value: `${k.activeCount} parts`, sub: "not yet delivered", icon: Boxes, tone: "text-info" },
     { label: "Assembly Lines at Risk", value: `${k.linesAtRisk} lines`, sub: "impacted inside 48h", icon: Factory, tone: "text-elevated" },
     { label: "Stalled / Low-Confidence", value: `${k.stalledCount} parts`, sub: "no ETA / engineering hold", icon: AlertTriangle, tone: "text-critical" },
+    { label: "Customer Orders Exposed", value: eur(k.customerExposure), sub: "sales orders pegged to open shortages", icon: Users, tone: "text-info" },
+    { label: "Abnormal Demand", value: `${k.abnormalDemandCount} parts`, sub: "≥30% above 6-week baseline", icon: TrendingUp, tone: "text-elevated" },
   ];
 
   return (
@@ -75,7 +77,7 @@ function Hub() {
 
       <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-4">
         <h2 className="sr-only">Key figures</h2>
-        <section aria-label="Key figures" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <section aria-label="Key figures" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
           {kpis.map((x) => (
             <div key={x.label} className="rounded-md border bg-card p-3">
               <div className="flex items-center justify-between">
