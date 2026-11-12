@@ -74,7 +74,7 @@ function NavList({ collapsed, onPick }: { collapsed: boolean; onPick?: () => voi
           )}
         >
           <Link
-            to="/vision"
+            to="/"
             onClick={onPick}
             aria-label={collapsed ? "Business vision" : undefined}
           >

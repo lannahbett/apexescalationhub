@@ -11,3 +11,5 @@
 - [x] Business vision landing page with accurate capabilities and workspace navigation
 - [x] Customizable action dashboard: six widgets, visibility, ordering, density and analysis scope; preferences saved per perspective in this browser
 - [x] Guided practice: three isolated sample missions for freight comparison, supplier update review and customer date changes; confirmed board unchanged
+
+- [x] Business vision opens first at /; demo at /demo; launch film; Terms & Privacy pages

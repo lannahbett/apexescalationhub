@@ -43,4 +43,4 @@ use the editor.
 - Guided practice owns isolated fictional fixtures and reuses order, extraction and freight validation; never write practice state to the hub store or send practice messages.
 - The left navigation (app-sidebar.tsx) jumps to sections on the single board page; add real routes only when a section needs its own URL, so the shared board state stays in one place.
 - Visual analytics reads dashboardAnalysis in shortages.ts and uses the whole board for read-only expedite comparisons; filtered charts must not hide other order blockers or invent historical trends.
-- Keep the business presentation at /vision and the existing workspace at /; separate audiences without moving the established operational URL.
+- The business vision is the landing page at / and the workspace lives at /demo; /vision redirects to / so earlier shared links keep working. Legal pages (/terms, /privacy) share src/components/legal-page.tsx.
