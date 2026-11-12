@@ -1,9 +1,12 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { buildSeed, CURRENT_USER, type CommercialMode, type Part, type TimelineEntry } from "@/lib/shortages";
+import { applyOrderPatch, buildSeed, CURRENT_USER, ROLE_VIEWS, type CommercialMode, type RoleView, type CustomerOrder, type Part, type TimelineEntry } from "@/lib/shortages";
 
 const KEY = "apex-hub-v1";
 type Ctx = {
   parts: Part[];
+  roleView: RoleView;
+  setRoleView: (role: RoleView) => void;
+  updateOrder: (so: string, patch: Partial<CustomerOrder>, text: string) => void;
   commercialMode: CommercialMode;
   setCommercialMode: (mode: CommercialMode) => void;
   update: (id: string, patch: Partial<Part>, log?: Omit<TimelineEntry, "at" | "by">) => void;
@@ -13,10 +16,13 @@ const HubCtx = createContext<Ctx | null>(null);
 
 export function HubProvider({ children }: { children: ReactNode }) {
   const [parts, setParts] = useState<Part[]>(() => buildSeed());
+  const [roleView, setRoleView] = useState<RoleView>("planner");
   const [loaded, setLoaded] = useState(false);
   const [commercialMode, setCommercialMode] = useState<CommercialMode>("dual");
   useEffect(() => {
     try {
+      const role = ROLE_VIEWS.find((r) => r.id === localStorage.getItem("apex-role-view"));
+      if (role) setRoleView(role.id);
       const mode = localStorage.getItem("apex-commercial-mode");
       if (mode === "dual" || mode === "tiers" || mode === "penalties") setCommercialMode(mode);
       const raw = localStorage.getItem(KEY);
@@ -35,6 +41,8 @@ export function HubProvider({ children }: { children: ReactNode }) {
     if (loaded) localStorage.setItem(KEY, JSON.stringify(parts));
   }, [parts, loaded]);
   useEffect(() => { if (loaded) localStorage.setItem("apex-commercial-mode", commercialMode); }, [commercialMode, loaded]);
+
+  useEffect(() => { if (loaded) localStorage.setItem("apex-role-view", roleView); }, [roleView, loaded]);
 
   const [announce, setAnnounce] = useState("");
   const update: Ctx["update"] = (id, patch, log) => {
@@ -56,8 +64,12 @@ export function HubProvider({ children }: { children: ReactNode }) {
       ),
     );
   };
+  const updateOrder: Ctx["updateOrder"] = (so, patch, text) => {
+    setParts((ps) => applyOrderPatch(ps, so, patch, { kind: "date", text, at: new Date().toISOString(), by: CURRENT_USER }));
+    setAnnounce(`${so}: ${text}`);
+  };
   return (
-    <HubCtx.Provider value={{ parts, commercialMode, setCommercialMode, update, reset: () => { setParts(buildSeed()); setAnnounce("Sample data restored"); } }}>
+    <HubCtx.Provider value={{ roleView, setRoleView, updateOrder, parts, commercialMode, setCommercialMode, update, reset: () => { setParts(buildSeed()); setAnnounce("Sample data restored"); } }}>
       {children}
       <div role="status" aria-live="polite" className="sr-only">{announce}</div>
     </HubCtx.Provider>

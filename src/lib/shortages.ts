@@ -48,7 +48,23 @@ export interface Part {
   orders?: CustomerOrder[] | undefined;
   demand?: DemandSignal | undefined;
   leadTime?: LeadTimeSignal | undefined;
+  inboundFreight?: FreightMode;
+  inboundReference?: string;
 }
+
+export const ROLE_VIEWS = [
+  { id: "planner", label: "Material Planner" },
+  { id: "om", label: "Order Management" },
+  { id: "buyer", label: "Buyer / Procurement" },
+  { id: "manager", label: "Plant Supply Chain Manager" },
+] as const;
+export type RoleView = typeof ROLE_VIEWS[number]["id"];
+export const ORDER_STATUSES = { standard: "Standard", pull_in: "Pull-in", push_out: "Push-out", cancelled: "Cancelled" } as const;
+export type OrderStatus = keyof typeof ORDER_STATUSES;
+export const FREIGHT_MODES = { unspecified: "Not specified", air: "Air freight", road: "Road / groupage", sea: "Sea / ocean", express: "Dedicated express / hot-shot" } as const;
+export type FreightMode = keyof typeof FREIGHT_MODES;
+export const orderStatus = (o: CustomerOrder): OrderStatus => o.status ?? "standard";
+export const activeOrders = (p: Part) => (p.orders ?? []).filter((o) => orderStatus(o) !== "cancelled");
 
 export type CommercialMode = "dual" | "tiers" | "penalties";
 export type CustomerTier = "tier1" | "tier2" | "tier3";
@@ -61,6 +77,7 @@ export const CUSTOMER_TIERS: Record<CustomerTier, string> = { tier1: "Tier 1 · 
 export interface CustomerOrder {
   so: string; customer: string; strategic: boolean; committed: string; value: number; penaltyPerDay: number;
   tier?: CustomerTier; penaltyGraceDays?: number; otifImpact?: boolean;
+  status?: OrderStatus; originalCommitted?: string; freightMode?: FreightMode; transportReference?: string;
 }
 export const customerTier = (o: CustomerOrder): CustomerTier => o.tier ?? (o.strategic ? "tier1" : "tier3");
 export const commercialVisibility = (mode: CommercialMode) => ({ tiers: mode !== "penalties", penalties: mode !== "tiers" });
@@ -76,7 +93,7 @@ export function projectedPenalty(p: Part, o: CustomerOrder) {
 /** One commercial exposure per sales order, using its worst open-part delay. */
 export function computeCommercialKpis(parts: Part[]) {
   const orders = new Map<string, { tier1: boolean; otif: boolean; penalty: number; daily: number }>();
-  for (const p of parts.filter((p) => p.stage !== "delivered")) for (const o of p.orders ?? []) {
+  for (const p of parts.filter((p) => p.stage !== "delivered")) for (const o of activeOrders(p)) {
     const old = orders.get(o.so);
     const penalty = projectedPenalty(p, o).total;
     orders.set(o.so, {
@@ -101,9 +118,10 @@ export const isAbnormalDemand = (d?: DemandSignal | undefined) => demandSurgePct
 export const leadTimeDriftPct = (l?: LeadTimeSignal | undefined) =>
   !l || l.erpDays <= 0 ? 0 : Math.round(((l.actualDays - l.erpDays) / l.erpDays) * 100);
 /** Customer order value blocked by this part. */
-export const orderExposure = (p: Part) => (p.orders ?? []).reduce((s, o) => s + o.value, 0);
+export const orderExposure = (p: Part) => activeOrders(p).reduce((s, o) => s + o.value, 0);
 /** Days the projected availability (target build + days late) overshoots an order's committed date; 0 if safe. */
 export function orderSlipDays(p: Part, o: CustomerOrder) {
+  if (orderStatus(o) === "cancelled") return 0;
   const ready = new Date(p.targetBuild).getTime() + p.daysLate * 86400000;
   return Math.max(0, Math.ceil((ready - new Date(o.committed).getTime()) / 86400000));
 }
@@ -188,11 +206,11 @@ export function seedSignals(i: number, s: { daysLate: number; valueAtRisk: numbe
     };
   });
   const baselineWeekly = 40 + i * 15;
-  const surge = [85, 12, 46, 5, 34, -8, 62, 0, 18, 41, 3, 9, 25, -4][i % 14]!;
+  const surge = [85, 12, 46, 5, 34, -8, 62, 0, 18, 41, 3, 9, 25, -4][i % 14] ?? 0;
   const demand: DemandSignal = {
     baselineWeekly,
     actualWeekly: Math.round(baselineWeekly * (1 + surge / 100)),
-    driver: surge >= DEMAND_SURGE_THRESHOLD ? DRIVERS[i % 5]! : DRIVERS[5]!,
+    driver: surge >= DEMAND_SURGE_THRESHOLD ? (DRIVERS[i % 5] ?? "Demand spike") : (DRIVERS[5] ?? "Forecast in line"),
   };
   const erpDays = 10 + (i % 4) * 4;
   const leadTime: LeadTimeSignal = { erpDays, actualDays: erpDays + s.daysLate * 2 + (i % 3), otdPct: Math.max(48, 96 - s.daysLate * 5 - (i % 3) * 3) };
@@ -238,7 +256,7 @@ export function filterParts(parts: Part[], filter: FilterId, q: string) {
     if (filter === "due48" && p.hoursToLineStop > 48) return false;
     if (filter === "demand" && !isAbnormalDemand(p.demand)) return false;
     if (!query) return true;
-    return [p.partNumber, p.planner, p.description, p.category, ...(p.orders ?? []).flatMap((o) => [o.customer, o.so])].some((v) => v.toLowerCase().includes(query));
+    return [p.partNumber, p.planner, p.supplier, p.po, p.description, p.category, ...(p.orders ?? []).flatMap((o) => [o.customer, o.so])].some((v) => v.toLowerCase().includes(query));
   });
 }
 
@@ -247,3 +265,42 @@ export const CSV_TEMPLATE = [
   "PN-8402-HX,Brushless Servo Motor 48V,Motion Control,Line A - Robotics,2026-11-12,120,pcs,6,412000,Sarah M.,Kessler Antriebstechnik GmbH,PO-4500219843",
   "PN-3317-FP,FPGA Controller Board Rev C,Precision Electronics,Line B - Drive Units,2026-11-13,340,pcs,4,286500,Marco R.,Nordwave Electronics AB,PO-4500220117",
 ].join("\n");
+
+/** Date changes are confirmed customer commitments, not unapproved requests. */
+export function validateOrderChange(o: CustomerOrder, status: string, committed: string, freight: string) {
+  if (!(status in ORDER_STATUSES) || !(freight in FREIGHT_MODES)) return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(committed)) return false;
+  const d = new Date(`${committed}T00:00:00Z`);
+  if (!Number.isFinite(d.getTime()) || d.toISOString().slice(0, 10) !== committed) return false;
+  const old = o.committed.slice(0, 10);
+  if (status === "pull_in" && committed >= old) return false;
+  if (status === "push_out" && committed <= old) return false;
+  return true;
+}
+/** Update every pegging occurrence atomically; never deallocate stock without allocation data. */
+export function applyOrderPatch(parts: Part[], so: string, patch: Partial<CustomerOrder>, log: TimelineEntry): Part[] {
+  return parts.map((p) => !p.orders?.some((o) => o.so === so) ? p : {
+    ...p, orders: p.orders.map((o) => o.so === so ? { ...o, ...patch } : o), timeline: [log, ...p.timeline],
+  });
+}
+export function uniqueOrderRows(parts: Part[]) {
+  const rows = new Map<string, { order: CustomerOrder; parts: Part[]; slip: number; penalty: number }>();
+  for (const p of parts) for (const order of p.orders ?? []) {
+    const row = rows.get(order.so);
+    rows.set(order.so, { order: row?.order ?? order, parts: [...(row?.parts ?? []), p],
+      slip: Math.max(row?.slip ?? 0, p.stage === "delivered" ? 0 : orderSlipDays(p, order)),
+      penalty: Math.max(row?.penalty ?? 0, p.stage === "delivered" ? 0 : projectedPenalty(p, order).total) });
+  }
+  return [...rows.values()];
+}
+/** A scenario changes only this part's availability; other blockers stay in the estimate. */
+export function expediteComparison(parts: Part[], partId: string, daysSaved: number, extraCost: number, downtimePerDay: number, mode: CommercialMode) {
+  if (![daysSaved, extraCost, downtimePerDay].every(Number.isFinite) || !Number.isInteger(daysSaved) || daysSaved < 0 || daysSaved > 365 || extraCost < 0 || downtimePerDay < 0) return null;
+  const part = parts.find((p) => p.id === partId);
+  if (!part || part.stage === "delivered") return null;
+  const before = computeCommercialKpis(parts).projectedPenalties;
+  const after = computeCommercialKpis(parts.map((p) => p.id === partId ? { ...p, targetBuild: new Date(new Date(p.targetBuild).getTime() - daysSaved * 86400000).toISOString() } : p)).projectedPenalties;
+  const penaltySaving = mode === "tiers" ? 0 : Math.max(0, before - after);
+  const downtimeSaving = daysSaved * downtimePerDay;
+  return { penaltySaving, downtimeSaving, grossSaving: penaltySaving + downtimeSaving, netSaving: penaltySaving + downtimeSaving - extraCost };
+}

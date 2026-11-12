@@ -4,11 +4,12 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { CUSTOMER_TIERS, customerTier, commercialVisibility, projectedPenalty, orderExposure, orderSlipDays, validateCommercialTerms, eur, type CustomerOrder, type CustomerTier, type Part } from "@/lib/shortages";
+import { CUSTOMER_TIERS, customerTier, commercialVisibility, projectedPenalty, orderExposure, orderSlipDays, validateCommercialTerms, eur, ORDER_STATUSES, FREIGHT_MODES, orderStatus, type CustomerOrder, type CustomerTier, type Part } from "@/lib/shortages";
+import { OrderOperations } from "./order-operations";
 import { useHub } from "./store";
 
 export function CommercialOrders({ part }: { part: Part }) {
-  const { parts, commercialMode, update } = useHub();
+  const { commercialMode, updateOrder } = useHub();
   const visible = commercialVisibility(commercialMode);
   const [editing, setEditing] = useState<CustomerOrder | null>(null);
   const [tier, setTier] = useState<CustomerTier>("tier3");
@@ -23,10 +24,7 @@ export function CommercialOrders({ part }: { part: Part }) {
   const save = () => {
     if (!editing || !valid) return;
     const terms = { tier, strategic: tier === "tier1", penaltyPerDay: Number(daily), penaltyGraceDays: Number(grace), otifImpact: otif };
-    // Keep every occurrence of the same sales order consistent on this board.
-    const affected = parts.filter((p) => p.orders?.some((o) => o.so === editing.so));
-    for (const p of affected) update(p.id, { orders: (p.orders ?? []).map((o) => o.so === editing.so ? { ...o, ...terms } : o) },
-      { kind: "note", text: `Commercial terms updated for ${editing.so}: ${CUSTOMER_TIERS[tier]}, ${eur(terms.penaltyPerDay)}/day, ${terms.penaltyGraceDays}d grace, OTIF tracking ${otif ? "on" : "off"}.` });
+    updateOrder(editing.so, terms, `Commercial terms updated for ${editing.so}: ${CUSTOMER_TIERS[tier]}, ${eur(terms.penaltyPerDay)}/day, ${terms.penaltyGraceDays}d grace, OTIF tracking ${otif ? "on" : "off"}.`);
     setEditing(null); toast.success("Customer terms saved");
   };
   return (
@@ -43,12 +41,16 @@ export function CommercialOrders({ part }: { part: Part }) {
                 {visible.tiers && <span className="inline-block rounded border px-1.5 py-0.5 text-[11px] font-semibold">{CUSTOMER_TIERS[customerTier(o)]}</span>}
                 <div className="font-mono text-[11px] text-muted-foreground">{o.so} · {eur(o.value)}</div>
                 <div>Committed {new Date(o.committed).toLocaleDateString("en-GB")}</div>
+                 <div>{ORDER_STATUSES[orderStatus(o)]} · {FREIGHT_MODES[o.freightMode ?? "unspecified"]}</div>
+                 {o.originalCommitted && <div className="text-muted-foreground">Original commitment {o.originalCommitted.slice(0, 10)}</div>}
+                 {o.transportReference && <div className="break-all">{o.transportReference}</div>}
               </div>
               <Button size="icon" variant="ghost" aria-label={`Edit terms for ${o.so}`} title="Edit customer terms" onClick={() => edit(o)}><Pencil aria-hidden className="size-4" /></Button>
             </div>
-            <div className={slip > 0 ? "font-semibold text-critical" : "text-success"}>{slip > 0 ? `Projected slip ${slip}d` : "On track"}</div>
-            {visible.tiers && o.otifImpact !== false && <div className="text-muted-foreground">OTIF: {slip > 0 ? "delivery-date risk" : "on track"}</div>}
-            {visible.penalties && <div className="text-muted-foreground">{o.penaltyPerDay > 0 ? <>{eur(o.penaltyPerDay)}/day · {o.penaltyGraceDays ?? 0}d grace<br />Projected penalty {eur(penalty.total)} · {penalty.chargeableDays} chargeable days</> : "No daily penalty configured"}</div>}
+            <div className={slip > 0 ? "font-semibold text-critical" : "text-success"}>{orderStatus(o) === "cancelled" ? "Cancelled · excluded from exposure" : slip > 0 ? `Projected slip ${slip}d` : "On track"}</div>
+            {orderStatus(o) !== "cancelled" && visible.tiers && o.otifImpact !== false && <div className="text-muted-foreground">OTIF: {slip > 0 ? "delivery-date risk" : "on track"}</div>}
+            {orderStatus(o) !== "cancelled" && visible.penalties && <div className="text-muted-foreground">{o.penaltyPerDay > 0 ? <>{eur(o.penaltyPerDay)}/day · {o.penaltyGraceDays ?? 0}d grace<br />Projected penalty {eur(penalty.total)} · {penalty.chargeableDays} chargeable days</> : "No daily penalty configured"}</div>}
+            <OrderOperations order={o} />
           </li>;
         })}
       </ul>}

@@ -34,3 +34,7 @@ use the editor.
 - Use a native select for workflow stages and a separate Button for Kanban details; this avoids nested controls and hidden-but-focusable content from the previous popup.
 - AI calls go through server functions in src/lib/ai.functions.ts using the GROQ_API_KEY secret; model output that changes board data must pass sanitizeExtraction (src/lib/ai-parse.ts) and explicit planner confirmation, so the AI never edits parts on its own.
 - Commercial calculations and legacy order defaults belong in shortages.ts; commercial mode persists separately from the board, and commercial-orders.tsx edits every occurrence of a sales order together to prevent inconsistent terms and duplicate KPI exposure.
+
+- Role perspectives are presentation lenses, not authorization roles; persist their selection separately and keep the shared board unchanged.
+- Apply sales-order changes atomically across all pegging occurrences; cancellations remove commercial exposure only, because inventory allocation and ERP write-back are not modeled.
+- Expedite scenarios retain other part blockers, deduplicate order penalties and label downtime as a user assumption; scenarios never book freight or alter the board.

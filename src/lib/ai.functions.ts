@@ -28,21 +28,25 @@ const partSummary = z.object({
   partNumber: z.string(), description: z.string(), line: z.string(), stage: z.string(),
   confidence: z.string(), daysLate: z.number(), hoursToLineStop: z.number(), valueAtRisk: z.number(),
   riskScore: z.number(), planner: z.string(), supplier: z.string(),
+  po: z.string().optional(), qtyPending: z.number().optional(), uom: z.string().optional(), inboundFreight: z.string().optional(), inboundReference: z.string().optional(),
   demandSurgePct: z.number().optional(), leadTimeDriftPct: z.number().optional(),
   customerOrders: z.array(z.object({ so: z.string(), customer: z.string(), committed: z.string(), value: z.number(), slipDays: z.number(),
+    status: z.enum(["standard", "pull_in", "push_out", "cancelled"]).optional(), outboundFreight: z.string().optional(),
     tier: z.enum(["tier1", "tier2", "tier3"]).optional(), otifImpact: z.boolean().optional(),
     penaltyPerDay: z.number().nonnegative().optional(), penaltyGraceDays: z.number().int().min(0).max(365).optional(), projectedPenalty: z.number().nonnegative().optional(),
   })).max(10).optional(),
 });
+const roleView = z.enum(["planner", "om", "buyer", "manager"]).default("planner");
+const rolePrompt = (role: string) => role === "om" ? "Address Order Management: lead with customer, SO, committed date and projected slip; highlight approved date changes and outbound freight. Do not imply order entry or document generation is available." : role === "buyer" ? "Address procurement: lead with supplier, PO, open quantity, inbound freight, lead-time drift and requests for confirmed supplier dates." : role === "manager" ? "Address the Plant Supply Chain Manager: lead with blocked production, line-stop urgency and commercial exposure; finish with decisions and accountable planners." : "Address material planners: lead with part availability, line-stop urgency and mitigation priorities.";
 const commercialMode = z.enum(["dual", "tiers", "penalties"]).default("dual");
 const commercialPrompt = (mode: string) => `Commercial mode: ${mode}. ${mode === "tiers" ? "Discuss priority tiers and committed-date/OTIF risk only; never mention contractual penalties." : mode === "penalties" ? "Discuss supplied projected contractual penalties only; never mention priority tiers or OTIF." : "Discuss supplied priority tiers, committed-date/OTIF risk and projected penalties."} Penalties are forecasts after the supplied grace period, not accrued charges. Never imply our customer penalty terms bind the supplier. Do not infer in-full performance or an actual OTIF score.`;
 
 export const generateBriefing = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ parts: z.array(partSummary).max(200), commercialMode }).parse(d))
+  .inputValidator((d: unknown) => z.object({ parts: z.array(partSummary).max(200), commercialMode, roleView }).parse(d))
   .handler(async ({ data }) => {
     const text = await groq(
       "You are a senior material planning lead preparing a 60-second morning standup briefing for a manufacturing plant. Use ONLY the data given; never invent parts, numbers, dates or suppliers. Format: 'Top risks' (max 3 bullets, part number, line, hours to line stop, € at risk), 'Stalled cases' (bullets), 'Customer impact' (orders with slipDays>0: customer, SO, committed date), 'Demand & lead-time alerts' (demandSurgePct>=30 or leadTimeDriftPct>=50), 'Decisions needed today' (max 3 bullets). Plain text, concise.",
-      JSON.stringify({ instruction: commercialPrompt(data.commercialMode), parts: data.parts }),
+      JSON.stringify({ instruction: `${commercialPrompt(data.commercialMode)} ${rolePrompt(data.roleView)} Deduplicate SO exposure; never add customer revenue to blocked production value. Transport modes do not prove dispatch or customs clearance.`, parts: data.parts }),
     );
     return { text };
   });

@@ -16,6 +16,7 @@ import { CONFIDENCE, CURRENT_USER, DEMAND_SURGE_THRESHOLD, demandSurgePct, leadT
 import { ConfidencePill, LineStop, PlannerBadge, RiskPill } from "./badges";
 import { StageSelect } from "./board";
 import { useHub } from "./store";
+import { FreightAndExpedite } from "./order-operations";
 import { CommercialOrders } from "./commercial-orders";
 
 const kindIcon: Record<TimelineEntry["kind"], typeof Mail> = {
@@ -60,6 +61,7 @@ export function PartSheet({ partId, onClose }: { partId: string | null; onClose:
               </div>
 
               <CommercialOrders part={part} />
+              <FreightAndExpedite key={part.id} part={part} />
 
               {(part.demand || part.leadTime) && (
                 <section>

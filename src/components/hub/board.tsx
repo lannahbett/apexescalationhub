@@ -3,7 +3,7 @@ import type React from "react";
 import { ArrowUpDown, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { STAGES, eur, orderExposure, type Part, type Stage } from "@/lib/shortages";
+import { STAGES, activeOrders, eur, orderExposure, type Part, type Stage } from "@/lib/shortages";
 import { ConfidencePill, DemandChip, LeadTimeChip, LineStop, PlannerBadge, RiskPill, StageBadge } from "./badges";
 import { useHub } from "./store";
 
@@ -55,7 +55,7 @@ export function ShortageTable({ parts, onOpen, density = "standard" }: { parts: 
               </td>
               <td className="px-3 text-right font-mono text-xs">
                 <div className="font-semibold">{eur(p.valueAtRisk)}</div>
-                {(p.orders?.length ?? 0) > 0 && <div className="text-[11px] text-muted-foreground">{p.orders!.length} SO · {eur(orderExposure(p))}</div>}
+                {activeOrders(p).length > 0 && <div className="text-[11px] text-muted-foreground">{activeOrders(p).length} SO · {eur(orderExposure(p))}</div>}
               </td>
               <td className="px-3">
                 <div className="font-mono text-xs">{p.qtyPending.toLocaleString()} {p.uom}</div>

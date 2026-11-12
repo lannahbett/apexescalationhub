@@ -5,9 +5,10 @@ import { Toaster } from "@/components/ui/sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { COMMERCIAL_MODES, CURRENT_USER, FILTERS, computeCommercialKpis, computeKpis, eur, filterParts, initials, type FilterId } from "@/lib/shortages";
+import { ROLE_VIEWS, uniqueOrderRows, leadTimeDriftPct, COMMERCIAL_MODES, CURRENT_USER, FILTERS, computeCommercialKpis, computeKpis, eur, filterParts, initials, type FilterId } from "@/lib/shortages";
 import { HubProvider, useHub } from "@/components/hub/store";
 import { KanbanBoard, ShortageTable, type Density } from "@/components/hub/board";
+import { RoleBoard } from "@/components/hub/role-board";
 import { PartSheet } from "@/components/hub/part-sheet";
 import { ImportDialog } from "@/components/hub/import-dialog";
 import { BriefingDialog, InboundParserDialog } from "@/components/hub/ai-tools";
@@ -32,7 +33,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Hub() {
-  const { parts, reset, commercialMode, setCommercialMode } = useHub();
+  const { parts, reset, commercialMode, setCommercialMode, roleView, setRoleView } = useHub();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<FilterId>("all");
   const [view, setView] = useState<"table" | "kanban">("table");
@@ -45,7 +46,7 @@ function Hub() {
   const shown = useMemo(() => filterParts(parts, filter, q), [parts, filter, q]);
   const counts = useMemo(() => Object.fromEntries(FILTERS.map((f) => [f.id, filterParts(parts, f.id, "").length])), [parts]);
 
-  const kpis = [
+  const baseKpis = [
     { label: "Blocked Value at Risk", value: eur(k.valueAtRisk), sub: "open production runs", icon: Euro, tone: "text-critical" },
     { label: "Active Shortages", value: `${k.activeCount} parts`, sub: "not yet delivered", icon: Boxes, tone: "text-info" },
     { label: "Assembly Lines at Risk", value: `${k.linesAtRisk} lines`, sub: "impacted inside 48h", icon: Factory, tone: "text-elevated" },
@@ -54,6 +55,20 @@ function Hub() {
     ...(commercialMode !== "tiers" ? [{ label: "Projected SLA Penalties", value: eur(commercial.projectedPenalties), sub: `${eur(commercial.dailyPenalties)}/day at projected delay · demo`, icon: Euro, tone: "text-critical" }] : []),
     { label: "Abnormal Demand", value: `${k.abnormalDemandCount} parts`, sub: "≥30% above 6-week baseline", icon: TrendingUp, tone: "text-elevated" },
   ];
+
+  const orders = uniqueOrderRows(parts).filter((r) => r.order.status !== "cancelled");
+  const roleKpis = roleView === "om" ? [
+    { label: "Open Customer Orders", value: `${orders.filter((r) => r.parts.some((p) => p.stage !== "delivered")).length} orders`, sub: "linked to open shortages", icon: Users, tone: "text-info" },
+    { label: "Orders With Date Risk", value: `${orders.filter((r) => r.slip > 0).length} orders`, sub: "projected availability after commitment", icon: AlertTriangle, tone: "text-critical" },
+    { label: "Customer Value Exposed", value: eur(orders.filter((r) => r.slip > 0).reduce((sum, r) => sum + r.order.value, 0)), sub: "unique orders with projected slip", icon: Euro, tone: "text-critical" },
+    ...baseKpis.filter((k) => ["Tier 1 Orders Exposed", "Projected SLA Penalties"].includes(k.label)),
+  ] : roleView === "buyer" ? [
+    { label: "Suppliers With Shortages", value: `${new Set(parts.filter((p) => p.stage !== "delivered").map((p) => p.supplier)).size} suppliers`, sub: "open parts on this board", icon: Users, tone: "text-info" },
+    { label: "Open Purchase Orders", value: `${new Set(parts.filter((p) => p.stage !== "delivered").map((p) => p.po)).size} POs`, sub: "linked to open shortages", icon: Boxes, tone: "text-info" },
+    baseKpis[3],
+    { label: "Lead-Time Drift ≥50%", value: `${parts.filter((p) => p.stage !== "delivered" && leadTimeDriftPct(p.leadTime) >= 50).length} parts`, sub: "actual vs ERP lead time", icon: TrendingUp, tone: "text-elevated" },
+  ].filter((k): k is NonNullable<typeof k> => k != null) : roleView === "manager" ? baseKpis.filter((k) => k.label !== "Abnormal Demand") : baseKpis;
+  const kpis = roleKpis;
 
   return (
     <div className="min-h-dvh">
@@ -78,6 +93,14 @@ function Hub() {
       </header>
 
       <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-4">
+        <section aria-label="Role perspective" className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+          <label className="flex max-w-full flex-wrap items-center gap-2 text-xs font-semibold">Perspective
+            <select aria-label="Role perspective" value={roleView} onChange={(e) => { const role = ROLE_VIEWS.find((r) => r.id === e.target.value); if (role) setRoleView(role.id); }} className="h-11 min-w-11 max-w-full rounded-md border border-input bg-card px-3">
+              {ROLE_VIEWS.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+            </select>
+          </label>
+          <span className="text-[11px] text-muted-foreground">Sample board · saved in this browser</span>
+        </section>
         <h2 className="sr-only">Key figures</h2>
         <section aria-label="Key figures" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
           {kpis.map((x) => (
@@ -96,7 +119,7 @@ function Hub() {
           <div className="flex flex-col gap-2 md:flex-row md:items-center">
             <div className="relative md:w-72">
               <Search aria-hidden className="absolute left-2.5 top-2 size-4 text-muted-foreground" />
-              <Input value={q} onChange={(e) => setQ(e.target.value)} type="search" aria-label="Search part, planner or component" placeholder="Search part, planner, component…" className="h-11 bg-card pl-8 text-xs" />
+              <Input value={q} onChange={(e) => setQ(e.target.value)} type="search" aria-label="Search part, customer, supplier or order" placeholder="Search part, customer, supplier, order…" className="h-11 bg-card pl-8 text-xs" />
             </div>
             <div role="group" aria-label="Filters" className="flex flex-wrap gap-1.5">
               {FILTERS.map((f) => (
@@ -144,7 +167,7 @@ function Hub() {
 
         <section id="board" tabIndex={-1} aria-label="Shortage board">
           <h2 className="sr-only">Shortages ({shown.length})</h2>
-          {view === "table" ? <ShortageTable parts={shown} onOpen={setOpen} density={density} /> : <KanbanBoard parts={shown} onOpen={setOpen} />}
+          {view === "table" ? roleView === "planner" ? <ShortageTable parts={shown} onOpen={setOpen} density={density} /> : <RoleBoard parts={shown} onOpen={setOpen} density={density} /> : <KanbanBoard parts={shown} onOpen={setOpen} />}
         </section>
       </main>
       <PartSheet partId={open} onClose={() => setOpen(null)} />
