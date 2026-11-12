@@ -10,6 +10,7 @@ describe("dashboard analysis and isolated practice", () => {
     const data = dashboardAnalysis([p, { ...p, id: "second" }], "open");
     expect(data.customers[0]?.count).toBe(1);
     expect(data.commercial.projectedPenalties).toBe(10000);
+    expect(data.customers[0]?.penalty).toBe(10000);
     expect(data.outbound.find((r) => r.mode === "unspecified")?.count).toBe(1);
     expect(data.inbound.find((r) => r.mode === "unspecified")?.count).toBe(2);
   });
@@ -19,6 +20,7 @@ describe("dashboard analysis and isolated practice", () => {
     const data = dashboardAnalysis([cancelled, { ...p, id: "delivered", stage: "delivered" }], "open");
     expect(data.critical).toHaveLength(1); expect(data.actions).toHaveLength(1);
     expect(data.customers).toHaveLength(0); expect(data.commercial.projectedPenalties).toBe(0);
+    expect(data.stages.find((s) => s.id === "delivered")?.count).toBe(0);
   });
   it("my open parts respects the existing planner name and excludes delivered", () => {
     const p = practiceParts()[0]; if (!p) throw new Error("fixture required");
@@ -28,6 +30,8 @@ describe("dashboard analysis and isolated practice", () => {
     const p = practiceParts()[0]; if (!p) throw new Error("fixture required");
     const data = dashboardAnalysis([{ ...p, leadTime: { erpDays: 10, actualDays: 16, otdPct: 60 } }, { ...p, id: "other", leadTime: undefined }], "open");
     expect(data.suppliers[0]?.drift).toBe(6);
+    expect(data.suppliers[0]?.planned).toBe(10);
+    expect(data.suppliers[0]?.actual).toBe(16);
     expect(dashboardAnalysis([{ ...p, leadTime: undefined }], "open").suppliers[0]?.drift).toBeNull();
   });
   it("validates saved layouts, removes duplicates and keeps every available widget", () => {

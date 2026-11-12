@@ -118,6 +118,10 @@
   --success-soft: oklch(0.95 0.045 155);
   --info: oklch(0.5 0.14 245);
   --info-soft: oklch(0.95 0.03 245);
+  --vision-scrim: oklch(0.16 0.015 250 / 78%);
+  --vision-base: oklch(0.16 0.015 250);
+  --vision-foreground: oklch(0.99 0 0);
+  --vision-muted: oklch(0.91 0.006 250);
 }
 
 @theme inline {
@@ -133,6 +137,10 @@
   --color-success-soft: var(--success-soft);
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
+  --color-vision-scrim: var(--vision-scrim);
+  --color-vision-base: var(--vision-base);
+  --color-vision-foreground: var(--vision-foreground);
+  --color-vision-muted: var(--vision-muted);
 }
 
 @layer base {

@@ -314,14 +314,16 @@ export function dashboardAnalysis(parts: Part[], scope: "open" | "all" | "mine")
   const suppliers = [...new Set(open.map((p) => p.supplier))].map((name) => {
     const rows = open.filter((p) => p.supplier === name);
     const measured = rows.filter((p) => p.leadTime);
-    return { name, count: rows.length, drift: measured.length ? measured.reduce((sum, p) => sum + ((p.leadTime?.actualDays ?? 0) - (p.leadTime?.erpDays ?? 0)), 0) / measured.length : null };
+    return { name, count: rows.length, drift: measured.length ? measured.reduce((sum, p) => sum + ((p.leadTime?.actualDays ?? 0) - (p.leadTime?.erpDays ?? 0)), 0) / measured.length : null,
+      planned: measured.length ? measured.reduce((sum, p) => sum + (p.leadTime?.erpDays ?? 0), 0) / measured.length : null,
+      actual: measured.length ? measured.reduce((sum, p) => sum + (p.leadTime?.actualDays ?? 0), 0) / measured.length : null };
   }).sort((a, b) => (b.drift ?? -Infinity) - (a.drift ?? -Infinity));
   const orders = uniqueOrderRows(scoped).filter((r) => orderStatus(r.order) !== "cancelled" && r.parts.some((p) => p.stage !== "delivered"));
   const customers = [...new Set(orders.map((r) => r.order.customer))].map((name) => {
     const rows = orders.filter((r) => r.order.customer === name);
-    return { name, count: rows.length, atRisk: rows.filter((r) => r.slip > 0).length, committed: rows.map((r) => r.order.committed).sort()[0] ?? "", tier1: rows.filter((r) => customerTier(r.order) === "tier1").length };
+    return { name, count: rows.length, atRisk: rows.filter((r) => r.slip > 0).length, committed: rows.map((r) => r.order.committed).sort()[0] ?? "", tier1: rows.filter((r) => customerTier(r.order) === "tier1").length, penalty: rows.reduce((sum, r) => sum + r.penalty, 0) };
   }).sort((a, b) => b.atRisk - a.atRisk || a.committed.localeCompare(b.committed));
-  return { scoped, kpis: computeKpis(scoped), commercial: computeCommercialKpis(scoped),
+  return { scoped, stages: STAGES.map((s) => ({ ...s, count: scoped.filter((p) => p.stage === s.id).length })), kpis: computeKpis(scoped), commercial: computeCommercialKpis(scoped),
     critical: open.filter((p) => riskTier(p.riskScore) === "critical").sort((a, b) => a.hoursToLineStop - b.hoursToLineStop),
     actions: open.filter((p) => p.confidence === "stalled" || p.stage === "customs").sort((a, b) => b.riskScore - a.riskScore), suppliers, customers,
     inbound: Object.keys(FREIGHT_MODES).map((id) => ({ mode: id as FreightMode, count: open.filter((p) => (p.inboundFreight ?? "unspecified") === id).length })),
