@@ -7,3 +7,5 @@
 - [x] Order operations: confirmed pull-in, push-out, cancellation, inbound/outbound freight modes and expedite scenarios (browser-saved; no ERP write-back or stock deallocation)
 - [x] Phase 3: Validated CSV/XLSX import, column mapping, confirmed merge/replace, board and standup exports (browser-saved; notes/checklists excluded from exports)
 - [ ] Phase 4: Cloud multi-user sync
+- [x] Customizable action dashboard: six widgets, visibility, ordering, density and analysis scope; preferences saved per perspective in this browser
+- [x] Guided practice: three isolated sample missions for freight comparison, supplier update review and customer date changes; confirmed board unchanged

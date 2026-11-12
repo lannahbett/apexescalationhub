@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Boxes, Euro, Factory, Kanban, Rows3, Rows4, RotateCcw, Search, Table2, Zap, TrendingUp, Users } from "lucide-react";
+import { Kanban, Rows3, Rows4, RotateCcw, Search, Table2, Zap, X } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ROLE_VIEWS, uniqueOrderRows, leadTimeDriftPct, COMMERCIAL_MODES, CURRENT_USER, FILTERS, computeCommercialKpis, computeKpis, eur, filterParts, initials, type FilterId } from "@/lib/shortages";
+import { ROLE_VIEWS, COMMERCIAL_MODES, CURRENT_USER, FILTERS, filterParts, initials, type FilterId } from "@/lib/shortages";
 import { HubProvider, useHub } from "@/components/hub/store";
 import { KanbanBoard, ShortageTable, type Density } from "@/components/hub/board";
 import { RoleBoard } from "@/components/hub/role-board";
@@ -13,14 +13,15 @@ import { PartSheet } from "@/components/hub/part-sheet";
 import { ImportDialog } from "@/components/hub/import-dialog";
 import { ExportDialog } from "@/components/hub/export-dialog";
 import { BriefingDialog, InboundParserDialog } from "@/components/hub/ai-tools";
+import { ModularDashboard } from "@/components/hub/modular-dashboard";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Apex Escalation Hub — Parts Shortage Board" },
-      { name: "description", content: "Daily parts shortage and escalation board for material planners and production leads." },
-      { property: "og:title", content: "Apex Escalation Hub — Parts Shortage Board" },
-      { property: "og:description", content: "Track shortages, line impact, fix confidence and supplier escalations in one board." },
+      { title: "Apex Escalation Hub — Daily Operations Dashboard" },
+      { name: "description", content: "Personalize your manufacturing dashboard, act on critical shortages and explore guided practice scenarios." },
+      { property: "og:title", content: "Apex Escalation Hub — Daily Operations Dashboard" },
+      { property: "og:description", content: "Critical parts, supplier delivery drift and customer commitments in a customizable action dashboard." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -40,36 +41,11 @@ function Hub() {
   const [view, setView] = useState<"table" | "kanban">("table");
   const [open, setOpen] = useState<string | null>(null);
   const [density, setDensity] = useState<Density>("standard");
+  const [dashboardFocus, setDashboardFocus] = useState<{ ids: string[]; label: string } | null>(null);
   useEffect(() => { const d = localStorage.getItem("apex-density"); if (d === "compact") setDensity("compact"); }, []);
   const changeDensity = (d: Density) => { setDensity(d); localStorage.setItem("apex-density", d); };
-  const k = computeKpis(parts);
-  const commercial = computeCommercialKpis(parts);
-  const shown = useMemo(() => filterParts(parts, filter, q), [parts, filter, q]);
+  const shown = useMemo(() => filterParts(parts, filter, q).filter((p) => !dashboardFocus || dashboardFocus.ids.includes(p.id)), [parts, filter, q, dashboardFocus]);
   const counts = useMemo(() => Object.fromEntries(FILTERS.map((f) => [f.id, filterParts(parts, f.id, "").length])), [parts]);
-
-  const baseKpis = [
-    { label: "Blocked Value at Risk", value: eur(k.valueAtRisk), sub: "open production runs", icon: Euro, tone: "text-critical" },
-    { label: "Active Shortages", value: `${k.activeCount} parts`, sub: "not yet delivered", icon: Boxes, tone: "text-info" },
-    { label: "Assembly Lines at Risk", value: `${k.linesAtRisk} lines`, sub: "impacted inside 48h", icon: Factory, tone: "text-elevated" },
-    { label: "Stalled / Low-Confidence", value: `${k.stalledCount} parts`, sub: "no ETA / engineering hold", icon: AlertTriangle, tone: "text-critical" },
-    ...(commercialMode !== "penalties" ? [{ label: "Tier 1 Orders Exposed", value: `${commercial.tier1Orders} orders`, sub: `${commercial.otifOrders} orders with committed-date risk`, icon: Users, tone: "text-info" }] : []),
-    ...(commercialMode !== "tiers" ? [{ label: "Projected SLA Penalties", value: eur(commercial.projectedPenalties), sub: `${eur(commercial.dailyPenalties)}/day at projected delay`, icon: Euro, tone: "text-critical" }] : []),
-    { label: "Abnormal Demand", value: `${k.abnormalDemandCount} parts`, sub: "≥30% above 6-week baseline", icon: TrendingUp, tone: "text-elevated" },
-  ];
-
-  const orders = uniqueOrderRows(parts).filter((r) => r.order.status !== "cancelled");
-  const roleKpis = roleView === "om" ? [
-    { label: "Open Customer Orders", value: `${orders.filter((r) => r.parts.some((p) => p.stage !== "delivered")).length} orders`, sub: "linked to open shortages", icon: Users, tone: "text-info" },
-    { label: "Orders With Date Risk", value: `${orders.filter((r) => r.slip > 0).length} orders`, sub: "projected availability after commitment", icon: AlertTriangle, tone: "text-critical" },
-    { label: "Customer Value Exposed", value: eur(orders.filter((r) => r.slip > 0).reduce((sum, r) => sum + r.order.value, 0)), sub: "unique orders with projected slip", icon: Euro, tone: "text-critical" },
-    ...baseKpis.filter((k) => ["Tier 1 Orders Exposed", "Projected SLA Penalties"].includes(k.label)),
-  ] : roleView === "buyer" ? [
-    { label: "Suppliers With Shortages", value: `${new Set(parts.filter((p) => p.stage !== "delivered").map((p) => p.supplier)).size} suppliers`, sub: "open parts on this board", icon: Users, tone: "text-info" },
-    { label: "Open Purchase Orders", value: `${new Set(parts.filter((p) => p.stage !== "delivered").map((p) => p.po)).size} POs`, sub: "linked to open shortages", icon: Boxes, tone: "text-info" },
-    baseKpis[3],
-    { label: "Lead-Time Drift ≥50%", value: `${parts.filter((p) => p.stage !== "delivered" && leadTimeDriftPct(p.leadTime) >= 50).length} parts`, sub: "actual vs ERP lead time", icon: TrendingUp, tone: "text-elevated" },
-  ].filter((k): k is NonNullable<typeof k> => k != null) : roleView === "manager" ? baseKpis.filter((k) => k.label !== "Abnormal Demand") : baseKpis;
-  const kpis = roleKpis;
 
   return (
     <div className="min-h-dvh">
@@ -102,19 +78,12 @@ function Hub() {
           </label>
           <span className="text-[11px] text-muted-foreground">{parts.some((p) => p.timeline.some((t) => t.text.startsWith("ERP import:"))) ? "Imported board" : "Sample board"} · saved in this browser</span>
         </section>
-        <h2 className="sr-only">Key figures</h2>
-        <section aria-label="Key figures" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-          {kpis.map((x) => (
-            <div key={x.label} className="rounded-md border bg-card p-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{x.label}</span>
-                <x.icon aria-hidden className={cn("size-4 shrink-0", x.tone)} />
-              </div>
-              <div className="mt-1 font-mono text-xl font-semibold">{x.value}</div>
-              <div className="text-[11px] text-muted-foreground">{x.sub}</div>
-            </div>
-          ))}
-        </section>
+         <ModularDashboard onOpen={setOpen} onFocus={(ids, label) => {
+           setQ(""); setFilter("all"); setDashboardFocus({ ids, label });
+           requestAnimationFrame(() => { document.getElementById("board")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); document.getElementById("board")?.focus({ preventScroll: true }); });
+         }} />
+
+         <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-5"><h2 className="text-lg font-semibold">Shortage board <span className="font-mono text-xs font-normal text-muted-foreground">{shown.length} parts</span></h2>{dashboardFocus && <div role="status" className="flex min-w-0 items-center gap-2 text-xs text-info"><span className="min-w-0 break-words">{dashboardFocus.label}</span><Button variant="ghost" size="icon" title="Clear dashboard focus" aria-label="Clear dashboard focus" onClick={() => setDashboardFocus(null)}><X /></Button></div>}</div>
 
         <section aria-label="Board filters and view" className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-2 md:flex-row md:items-center">
@@ -124,7 +93,7 @@ function Hub() {
             </div>
             <div role="group" aria-label="Filters" className="flex flex-wrap gap-1.5">
               {FILTERS.map((f) => (
-                <Button variant="ghost" type="button" key={f.id} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}
+                 <Button variant="ghost" type="button" key={f.id} aria-pressed={filter === f.id} onClick={() => { setFilter(f.id); setDashboardFocus(null); }}
                   className={cn("inline-flex items-center gap-1.5 min-h-11 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
                     filter === f.id ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-accent")}>
                   {f.label}

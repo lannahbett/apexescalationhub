@@ -307,6 +307,26 @@ export function uniqueOrderRows(parts: Part[]) {
   }
   return [...rows.values()];
 }
+/** Dashboard analysis uses existing commercial rules and never invents approval requests or shipment status. */
+export function dashboardAnalysis(parts: Part[], scope: "open" | "all" | "mine") {
+  const scoped = parts.filter((p) => scope === "all" || (p.stage !== "delivered" && (scope !== "mine" || p.planner === CURRENT_USER)));
+  const open = scoped.filter((p) => p.stage !== "delivered");
+  const suppliers = [...new Set(open.map((p) => p.supplier))].map((name) => {
+    const rows = open.filter((p) => p.supplier === name);
+    const measured = rows.filter((p) => p.leadTime);
+    return { name, count: rows.length, drift: measured.length ? measured.reduce((sum, p) => sum + ((p.leadTime?.actualDays ?? 0) - (p.leadTime?.erpDays ?? 0)), 0) / measured.length : null };
+  }).sort((a, b) => (b.drift ?? -Infinity) - (a.drift ?? -Infinity));
+  const orders = uniqueOrderRows(scoped).filter((r) => orderStatus(r.order) !== "cancelled" && r.parts.some((p) => p.stage !== "delivered"));
+  const customers = [...new Set(orders.map((r) => r.order.customer))].map((name) => {
+    const rows = orders.filter((r) => r.order.customer === name);
+    return { name, count: rows.length, atRisk: rows.filter((r) => r.slip > 0).length, committed: rows.map((r) => r.order.committed).sort()[0] ?? "", tier1: rows.filter((r) => customerTier(r.order) === "tier1").length };
+  }).sort((a, b) => b.atRisk - a.atRisk || a.committed.localeCompare(b.committed));
+  return { scoped, kpis: computeKpis(scoped), commercial: computeCommercialKpis(scoped),
+    critical: open.filter((p) => riskTier(p.riskScore) === "critical").sort((a, b) => a.hoursToLineStop - b.hoursToLineStop),
+    actions: open.filter((p) => p.confidence === "stalled" || p.stage === "customs").sort((a, b) => b.riskScore - a.riskScore), suppliers, customers,
+    inbound: Object.keys(FREIGHT_MODES).map((id) => ({ mode: id as FreightMode, count: open.filter((p) => (p.inboundFreight ?? "unspecified") === id).length })),
+    outbound: Object.keys(FREIGHT_MODES).map((id) => ({ mode: id as FreightMode, count: orders.filter((r) => (r.order.freightMode ?? "unspecified") === id).length })) };
+}
 /** A scenario changes only this part's availability; other blockers stay in the estimate. */
 export function expediteComparison(parts: Part[], partId: string, daysSaved: number, extraCost: number, downtimePerDay: number, mode: CommercialMode) {
   if (![daysSaved, extraCost, downtimePerDay].every(Number.isFinite) || !Number.isInteger(daysSaved) || daysSaved < 0 || daysSaved > 365 || extraCost < 0 || downtimePerDay < 0) return null;

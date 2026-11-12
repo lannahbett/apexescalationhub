@@ -39,3 +39,5 @@ use the editor.
 - Apply sales-order changes atomically across all pegging occurrences; cancellations remove commercial exposure only, because inventory allocation and ERP write-back are not modeled.
 - Expedite scenarios retain other part blockers, deduplicate order penalties and label downtime as a user assumption; scenarios never book freight or alter the board.
 - Parse CSV/XLSX in client-safe data-exchange.ts with lazy ExcelJS loading; validate all rows before a confirmed atomic store import, matching part/PO/line and propagating sales-order terms across pegging links to avoid partial imports or inconsistent exposure.
+- Dashboard preferences are validated and stored separately per perspective; widgets use shortages.ts analysis and focus the shared board without mutating it.
+- Guided practice owns isolated fictional fixtures and reuses order, extraction and freight validation; never write practice state to the hub store or send practice messages.
