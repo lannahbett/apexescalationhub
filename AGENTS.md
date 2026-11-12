@@ -38,3 +38,4 @@ use the editor.
 - Role perspectives are presentation lenses, not authorization roles; persist their selection separately and keep the shared board unchanged.
 - Apply sales-order changes atomically across all pegging occurrences; cancellations remove commercial exposure only, because inventory allocation and ERP write-back are not modeled.
 - Expedite scenarios retain other part blockers, deduplicate order penalties and label downtime as a user assumption; scenarios never book freight or alter the board.
+- Parse CSV/XLSX in client-safe data-exchange.ts with lazy ExcelJS loading; validate all rows before a confirmed atomic store import, matching part/PO/line and propagating sales-order terms across pegging links to avoid partial imports or inconsistent exposure.

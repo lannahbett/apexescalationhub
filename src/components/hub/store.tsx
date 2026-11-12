@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { applyOrderPatch, buildSeed, CURRENT_USER, ROLE_VIEWS, type CommercialMode, type RoleView, type CustomerOrder, type Part, type TimelineEntry } from "@/lib/shortages";
+import { applyOrderPatch, applyReportParts, buildSeed, CURRENT_USER, ROLE_VIEWS, type CommercialMode, type RoleView, type CustomerOrder, type Part, type TimelineEntry } from "@/lib/shortages";
+import { validateReport, type Grid, type Mapping } from "@/lib/data-exchange";
+import { toast } from "sonner";
 
 const KEY = "apex-hub-v1";
 type Ctx = {
@@ -11,6 +13,7 @@ type Ctx = {
   setCommercialMode: (mode: CommercialMode) => void;
   update: (id: string, patch: Partial<Part>, log?: Omit<TimelineEntry, "at" | "by">) => void;
   reset: () => void;
+  importReport: (grid: Grid, mapping: Mapping, mode: "merge" | "replace") => number;
 };
 const HubCtx = createContext<Ctx | null>(null);
 
@@ -38,7 +41,10 @@ export function HubProvider({ children }: { children: ReactNode }) {
     setLoaded(true);
   }, []);
   useEffect(() => {
-    if (loaded) localStorage.setItem(KEY, JSON.stringify(parts));
+    if (loaded) {
+      try { localStorage.setItem(KEY, JSON.stringify(parts)); }
+      catch { toast.error("The browser could not save the board. Export a copy before closing this page."); }
+    }
   }, [parts, loaded]);
   useEffect(() => { if (loaded) localStorage.setItem("apex-commercial-mode", commercialMode); }, [commercialMode, loaded]);
 
@@ -68,8 +74,19 @@ export function HubProvider({ children }: { children: ReactNode }) {
     setParts((ps) => applyOrderPatch(ps, so, patch, { kind: "date", text, at: new Date().toISOString(), by: CURRENT_USER }));
     setAnnounce(`${so}: ${text}`);
   };
+  const importReport: Ctx["importReport"] = (grid, mapping, mode) => {
+    const result = validateReport(grid, mapping, parts, mode);
+    if (result.errors.length || !result.parts.length) throw new Error("The report has validation errors. No changes were applied.");
+    const text = `ERP import: ${grid.name}, ${result.parts.length} shortages (${mode}).`;
+    const next = applyReportParts(parts, result.parts, mode, { kind: "note", text, at: new Date().toISOString(), by: CURRENT_USER });
+    try { localStorage.setItem(KEY, JSON.stringify(next)); }
+    catch { throw new Error("Not enough browser storage. Export your board or use a smaller report. No changes were applied."); }
+    setParts(next);
+    setAnnounce(text);
+    return result.parts.length;
+  };
   return (
-    <HubCtx.Provider value={{ roleView, setRoleView, updateOrder, parts, commercialMode, setCommercialMode, update, reset: () => { setParts(buildSeed()); setAnnounce("Sample data restored"); } }}>
+    <HubCtx.Provider value={{ importReport, roleView, setRoleView, updateOrder, parts, commercialMode, setCommercialMode, update, reset: () => { setParts(buildSeed()); setAnnounce("Sample data restored"); } }}>
       {children}
       <div role="status" aria-live="polite" className="sr-only">{announce}</div>
     </HubCtx.Provider>

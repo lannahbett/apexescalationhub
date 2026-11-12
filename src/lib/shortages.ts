@@ -283,6 +283,20 @@ export function applyOrderPatch(parts: Part[], so: string, patch: Partial<Custom
     ...p, orders: p.orders.map((o) => o.so === so ? { ...o, ...patch } : o), timeline: [log, ...p.timeline],
   });
 }
+/** Import is atomic; omitted shortages survive a merge and order terms stay consistent across all pegging links. */
+export function applyReportParts(existing: Part[], incoming: Part[], mode: "merge" | "replace", log: TimelineEntry): Part[] {
+  const identity = (p: Part) => JSON.stringify([p.partNumber, p.po, p.line]);
+  const incomingByKey = new Map(incoming.map((p) => [identity(p), p]));
+  const orderTerms = new Map(incoming.flatMap((p) => (p.orders ?? []).map((o) => [o.so, o] as const)));
+  const combined = mode === "replace" ? incoming : [
+    ...existing.map((p) => incomingByKey.get(identity(p)) ?? p),
+    ...incoming.filter((p) => !existing.some((old) => identity(old) === identity(p))),
+  ];
+  return combined.map((p) => {
+    const touched = incomingByKey.has(identity(p)) || p.orders?.some((o) => orderTerms.has(o.so));
+    return { ...p, orders: (p.orders ?? []).map((o) => orderTerms.get(o.so) ?? o), timeline: touched ? [log, ...p.timeline] : p.timeline };
+  });
+}
 export function uniqueOrderRows(parts: Part[]) {
   const rows = new Map<string, { order: CustomerOrder; parts: Part[]; slip: number; penalty: number }>();
   for (const p of parts) for (const order of p.orders ?? []) {

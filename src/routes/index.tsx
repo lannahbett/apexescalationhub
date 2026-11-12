@@ -11,6 +11,7 @@ import { KanbanBoard, ShortageTable, type Density } from "@/components/hub/board
 import { RoleBoard } from "@/components/hub/role-board";
 import { PartSheet } from "@/components/hub/part-sheet";
 import { ImportDialog } from "@/components/hub/import-dialog";
+import { ExportDialog } from "@/components/hub/export-dialog";
 import { BriefingDialog, InboundParserDialog } from "@/components/hub/ai-tools";
 
 export const Route = createFileRoute("/")({
@@ -52,7 +53,7 @@ function Hub() {
     { label: "Assembly Lines at Risk", value: `${k.linesAtRisk} lines`, sub: "impacted inside 48h", icon: Factory, tone: "text-elevated" },
     { label: "Stalled / Low-Confidence", value: `${k.stalledCount} parts`, sub: "no ETA / engineering hold", icon: AlertTriangle, tone: "text-critical" },
     ...(commercialMode !== "penalties" ? [{ label: "Tier 1 Orders Exposed", value: `${commercial.tier1Orders} orders`, sub: `${commercial.otifOrders} orders with committed-date risk`, icon: Users, tone: "text-info" }] : []),
-    ...(commercialMode !== "tiers" ? [{ label: "Projected SLA Penalties", value: eur(commercial.projectedPenalties), sub: `${eur(commercial.dailyPenalties)}/day at projected delay · demo`, icon: Euro, tone: "text-critical" }] : []),
+    ...(commercialMode !== "tiers" ? [{ label: "Projected SLA Penalties", value: eur(commercial.projectedPenalties), sub: `${eur(commercial.dailyPenalties)}/day at projected delay`, icon: Euro, tone: "text-critical" }] : []),
     { label: "Abnormal Demand", value: `${k.abnormalDemandCount} parts`, sub: "≥30% above 6-week baseline", icon: TrendingUp, tone: "text-elevated" },
   ];
 
@@ -99,7 +100,7 @@ function Hub() {
               {ROLE_VIEWS.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
             </select>
           </label>
-          <span className="text-[11px] text-muted-foreground">Sample board · saved in this browser</span>
+          <span className="text-[11px] text-muted-foreground">{parts.some((p) => p.timeline.some((t) => t.text.startsWith("ERP import:"))) ? "Imported board" : "Sample board"} · saved in this browser</span>
         </section>
         <h2 className="sr-only">Key figures</h2>
         <section aria-label="Key figures" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
@@ -144,6 +145,7 @@ function Hub() {
               </select>
             </label>
             <BriefingDialog />
+            <ExportDialog shown={shown} />
             <InboundParserDialog />
             <Button size="icon" variant="ghost" onClick={reset} title="Reset sample data" aria-label="Reset sample data"><RotateCcw aria-hidden className="size-3.5" /></Button>
             <div role="group" aria-label="Row density" className="inline-flex rounded-md border bg-card p-0.5">
