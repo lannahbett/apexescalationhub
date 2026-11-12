@@ -41,3 +41,4 @@ use the editor.
 - Parse CSV/XLSX in client-safe data-exchange.ts with lazy ExcelJS loading; validate all rows before a confirmed atomic store import, matching part/PO/line and propagating sales-order terms across pegging links to avoid partial imports or inconsistent exposure.
 - Dashboard preferences are validated and stored separately per perspective; widgets use shortages.ts analysis and focus the shared board without mutating it.
 - Guided practice owns isolated fictional fixtures and reuses order, extraction and freight validation; never write practice state to the hub store or send practice messages.
+- The left navigation (app-sidebar.tsx) jumps to sections on the single board page; add real routes only when a section needs its own URL, so the shared board state stays in one place.

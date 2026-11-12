@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Kanban, Rows3, Rows4, RotateCcw, Search, Table2, Zap, X } from "lucide-react";
+import { Kanban, Rows3, Rows4, RotateCcw, Search, Table2, X } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ROLE_VIEWS, COMMERCIAL_MODES, CURRENT_USER, FILTERS, filterParts, initials, type FilterId } from "@/lib/shortages";
+import { ROLE_VIEWS, COMMERCIAL_MODES, FILTERS, filterParts, type FilterId } from "@/lib/shortages";
 import { HubProvider, useHub } from "@/components/hub/store";
 import { KanbanBoard, ShortageTable, type Density } from "@/components/hub/board";
 import { RoleBoard } from "@/components/hub/role-board";
@@ -13,6 +13,8 @@ import { PartSheet } from "@/components/hub/part-sheet";
 import { ImportDialog } from "@/components/hub/import-dialog";
 import { ExportDialog } from "@/components/hub/export-dialog";
 import { BriefingDialog, InboundParserDialog } from "@/components/hub/ai-tools";
+import { AppSidebar, MobileNav } from "@/components/hub/app-sidebar";
+import { ApexLogo } from "@/components/brand/apex-logo";
 import { ModularDashboard } from "@/components/hub/modular-dashboard";
 
 export const Route = createFileRoute("/")({
@@ -48,12 +50,15 @@ function Hub() {
   const counts = useMemo(() => Object.fromEntries(FILTERS.map((f) => [f.id, filterParts(parts, f.id, "").length])), [parts]);
 
   return (
-    <div className="min-h-dvh">
+    <div className="flex min-h-dvh w-full">
+      <AppSidebar />
+      <div className="min-w-0 flex-1">
       <a href="#board" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-card focus:px-3 focus:py-2 focus:text-xs">Skip to shortage board</a>
       <header className="bg-sidebar text-sidebar-foreground">
         <div className="mx-auto grid grid-cols-[minmax(0,1fr)_auto] sm:flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3">
           <div className="flex min-w-0 items-center gap-2.5">
-            <div className="grid size-8 shrink-0 place-items-center rounded bg-sidebar-primary text-sidebar-primary-foreground"><Zap aria-hidden className="size-4" /></div>
+            <MobileNav />
+            <div className="md:hidden"><ApexLogo compact /></div>
             <div className="min-w-0">
               <h1 className="text-sm font-semibold leading-tight">Apex Escalation Hub</h1>
               <div className="text-[11px] text-sidebar-foreground/80">Morning standup · {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</div>
@@ -61,16 +66,12 @@ function Hub() {
           </div>
           <div className="flex items-center gap-2">
             <ImportDialog />
-            <div className="hidden items-center gap-2 sm:flex">
-              <span aria-hidden className="grid size-7 place-items-center rounded-full bg-sidebar-accent text-[11px] font-semibold">{initials(CURRENT_USER)}</span>
-              <span className="text-xs">{CURRENT_USER}</span>
-            </div>
-          </div>
+                      </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-4">
-        <section aria-label="Role perspective" className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+        <section id="perspective" tabIndex={-1} aria-label="Role perspective" className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
           <label className="flex max-w-full flex-wrap items-center gap-2 text-xs font-semibold">Perspective
             <select aria-label="Role perspective" value={roleView} onChange={(e) => { const role = ROLE_VIEWS.find((r) => r.id === e.target.value); if (role) setRoleView(role.id); }} className="h-11 min-w-11 max-w-full rounded-md border border-input bg-card px-3">
               {ROLE_VIEWS.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
@@ -78,10 +79,10 @@ function Hub() {
           </label>
           <span className="text-[11px] text-muted-foreground">{parts.some((p) => p.timeline.some((t) => t.text.startsWith("ERP import:"))) ? "Imported board" : "Sample board"} · saved in this browser</span>
         </section>
-         <ModularDashboard onOpen={setOpen} onFocus={(ids, label) => {
+         <div id="dashboard" tabIndex={-1}><ModularDashboard onOpen={setOpen} onFocus={(ids, label) => {
            setQ(""); setFilter("all"); setDashboardFocus({ ids, label });
            requestAnimationFrame(() => { document.getElementById("board")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); document.getElementById("board")?.focus({ preventScroll: true }); });
-         }} />
+         }} /></div>
 
          <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-5"><h2 className="text-lg font-semibold">Shortage board <span className="font-mono text-xs font-normal text-muted-foreground">{shown.length} parts</span></h2>{dashboardFocus && <div role="status" className="flex min-w-0 items-center gap-2 text-xs text-info"><span className="min-w-0 break-words">{dashboardFocus.label}</span><Button variant="ghost" size="icon" title="Clear dashboard focus" aria-label="Clear dashboard focus" onClick={() => setDashboardFocus(null)}><X /></Button></div>}</div>
 
@@ -103,7 +104,7 @@ function Hub() {
               ))}
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div id="tools" tabIndex={-1} className="flex flex-wrap items-center gap-2">
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
               Commercial mode
               <select aria-label="Commercial mode" value={commercialMode} onChange={(e) => {
@@ -142,6 +143,7 @@ function Hub() {
         </section>
       </main>
       <PartSheet partId={open} onClose={() => setOpen(null)} />
+      </div>
     </div>
   );
 }
