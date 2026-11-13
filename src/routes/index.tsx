@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ApexLogo } from "@/components/brand/apex-logo";
 import floor from "@/assets/manufacturing-floor.jpg";
+import { ProductShowcase } from "@/components/vision/product-showcase";
 import launchFilm from "@/assets/videos/apex-launch-film.mp4.asset.json";
 
 export const Route = createFileRoute("/")({
@@ -149,6 +150,7 @@ function BusinessVision() {
             />
           </div>
         </section>
+        <ProductShowcase />
         <section id="business-context" className="border-b bg-card">
           <div className="mx-auto grid max-w-7xl gap-8 px-5 py-12 md:grid-cols-[1fr_1.3fr] md:px-8">
             <div>
