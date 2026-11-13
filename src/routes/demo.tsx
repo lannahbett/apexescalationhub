@@ -19,6 +19,7 @@ import { ShippingGate } from "@/components/hub/shipping-gate";
 import { ConnectorsHub } from "@/components/hub/connectors-hub";
 import { ModularDashboard } from "@/components/hub/modular-dashboard";
 import { ActivityFeed, SharedBoardEmpty, SharedBoardStatus } from "@/components/hub/shared-board";
+import { Improvement } from "@/components/hub/improvement";
 
 export const Route = createFileRoute("/demo")({
   staticData: { sitemap: true },
@@ -148,6 +149,7 @@ function Hub() {
           {view === "table" ? roleView === "planner" ? <ShortageTable parts={shown} onOpen={setOpen} density={density} /> : <RoleBoard parts={shown} onOpen={setOpen} density={density} /> : <KanbanBoard parts={shown} onOpen={setOpen} />}
         </section>
         <ShippingGate />
+        <Improvement onFocus={(ids, label) => { setQ(""); setFilter("all"); setDashboardFocus({ ids, label }); requestAnimationFrame(() => { document.getElementById("board")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }); document.getElementById("board")?.focus({ preventScroll: true }); }); }} />
         <ConnectorsHub />
       </main>
       <PartSheet partId={open} onClose={() => setOpen(null)} />

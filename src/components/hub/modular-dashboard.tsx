@@ -3,13 +3,13 @@ import { ArrowDown, ArrowUp, ArrowUpRight, Factory, SlidersHorizontal, RotateCcw
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { dashboardAnalysis, eur, FREIGHT_MODES, commercialVisibility } from "@/lib/shortages";
+import { dashboardAnalysis, improvementAnalysis, eur, FREIGHT_MODES, commercialVisibility } from "@/lib/shortages";
 import { WIDGETS, defaultDashboard, readDashboard, type DashboardPreferences, type WidgetId } from "@/lib/dashboard";
 import { useHub } from "./store";
 import { GuidedPractice } from "./interactive-tour";
 import { VisualAnalytics } from "./visual-analytics";
 
-const icons = { critical: Factory, commercial: Euro, suppliers: TrendingUp, actions: ListChecks, freight: Truck, customers: Users };
+const icons = { critical: Factory, commercial: Euro, suppliers: TrendingUp, actions: ListChecks, freight: Truck, customers: Users, improvement: ListChecks };
 export function ModularDashboard({ onFocus, onOpen }: { onFocus: (ids: string[], label: string) => void; onOpen: (id: string) => void }) {
   const { parts, roleView, commercialMode } = useHub();
   const [prefs, setPrefs] = useState<DashboardPreferences>(() => defaultDashboard(roleView));
@@ -35,6 +35,10 @@ export function ModularDashboard({ onFocus, onOpen }: { onFocus: (ids: string[],
   });
   const empty = <p className="py-5 text-sm text-muted-foreground">No matching open items.</p>;
   const content = (id: WidgetId) => {
+    if (id === "improvement") {
+      const history = improvementAnalysis(parts);
+      return <><div className="font-mono text-3xl font-semibold">{history.openActions}</div><p className="text-xs text-muted-foreground">open preventive follow-ups · {history.records.length} recorded recoveries</p><div className="mt-3 text-xs">{history.suppliers.length} repeat suppliers · past 30 days</div><ul className="mt-2 divide-y">{history.suppliers.slice(0, limit).map((s) => <li key={s.name}><Button variant="ghost" className="h-auto min-h-11 w-full justify-between gap-2 whitespace-normal px-0 text-left text-xs" onClick={() => onFocus(s.ids, `${s.name}: repeat escalations`)}><span>{s.name}</span><span className="shrink-0 text-elevated">{s.count} starts</span></Button></li>)}</ul><Button variant="link" className="px-0 text-xs" onClick={() => { document.getElementById("improvement")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }); document.getElementById("improvement")?.focus({ preventScroll: true }); }}>Review root causes <ArrowUpRight /></Button></>;
+    }
     if (id === "critical") return <>
       <div className="flex items-baseline gap-2"><strong className="font-mono text-3xl text-critical">{data.critical.length}</strong><span className="text-xs text-muted-foreground">critical parts · {data.kpis.linesAtRisk} lines within 48h</span></div>
       <ul className="mt-3 divide-y">{data.critical.slice(0, limit).map((p) => <li key={p.id}><Button variant="ghost" onClick={() => onOpen(p.id)} className="h-auto min-h-11 w-full justify-between whitespace-normal px-0 py-2 text-left"><span className="min-w-0"><span className="block font-mono text-xs">{p.partNumber}</span><span className="block text-[11px] font-normal text-muted-foreground">{p.line}</span></span><span className="ml-2 shrink-0 font-mono text-xs text-critical">{p.hoursToLineStop}h <ArrowUpRight className="inline size-3" /></span></Button></li>)}</ul>

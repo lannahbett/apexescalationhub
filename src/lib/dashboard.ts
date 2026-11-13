@@ -7,6 +7,7 @@ export const WIDGETS = [
   { id: "actions", label: "Action queue" },
   { id: "freight", label: "Freight mix" },
   { id: "customers", label: "Customer commitments" },
+  { id: "improvement", label: "Continuous improvement" },
 ] as const;
 export type WidgetId = typeof WIDGETS[number]["id"];
 export type DashboardPreferences = { order: WidgetId[]; hidden: WidgetId[]; density: "compact" | "expanded"; scope: "open" | "all" | "mine" };

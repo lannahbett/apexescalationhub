@@ -2,12 +2,13 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { applyOrderPatch, applyReportParts, buildSeed, CURRENT_USER, ROLE_VIEWS, type CommercialMode, type RoleView, type CustomerOrder, type Part, type TimelineEntry } from "@/lib/shortages";
+import { applyOrderPatch, applyReportParts, buildSeed, CURRENT_USER, ROLE_VIEWS, STAGES, validRecovery, type RecoveryRecord, type Stage, type CommercialMode, type RoleView, type CustomerOrder, type Part, type TimelineEntry } from "@/lib/shortages";
 import { validateReport, type Grid, type Mapping } from "@/lib/data-exchange";
 import { getViewer } from "@/lib/viewer.functions";
 import { boardClient, diffParts, type Activity, type Viewer } from "@/lib/cloud-board";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { RecoveryDialog } from "./recovery-dialog";
 
 const KEY = "apex-hub-v1";
 export type SyncStatus = "checking" | "local" | "connecting" | "live" | "empty" | "error";
@@ -19,6 +20,7 @@ type Ctx = {
   commercialMode: CommercialMode;
   setCommercialMode: (mode: CommercialMode) => void;
   update: (id: string, patch: Partial<Part>, log?: Omit<TimelineEntry, "at" | "by">) => void;
+  moveStage: (id: string, stage: Stage) => void;
   reset: () => void;
   importReport: (grid: Grid, mapping: Mapping, mode: "merge" | "replace") => number;
   viewer: Viewer | null;
@@ -155,6 +157,8 @@ export function HubProvider({ children }: { children: ReactNode }) {
   }, [actor]);
 
   const [announce, setAnnounce] = useState("");
+  const [recoveryId, setRecoveryId] = useState<string | null>(null);
+  const recoveryPart = parts.find((p) => p.id === recoveryId);
   const update: Ctx["update"] = (id, patch, log) => {
     if (log) {
       const pn = parts.find((p) => p.id === id)?.partNumber ?? "Part";
@@ -179,6 +183,20 @@ export function HubProvider({ children }: { children: ReactNode }) {
     setParts((ps) => applyOrderPatch(ps, so, patch, { kind: "date", text, at: new Date().toISOString(), by: actor }));
     setAnnounce(`${so}: ${text}`);
     logActivity(`${so}: ${text}`);
+  };
+  const moveStage: Ctx["moveStage"] = (id, stage) => {
+    const part = parts.find((p) => p.id === id);
+    const next = STAGES.find((s) => s.id === stage);
+    if (!part || !next || part.stage === stage) return;
+    if (stage === "delivered") { setRecoveryId(id); return; }
+    update(id, { stage }, { kind: "stage", text: `${part.stage === "delivered" ? "Escalation reopened: " : ""}Stage moved to ${next.n}. ${next.label}` });
+  };
+  const confirmRecovery = (draft: RecoveryRecord) => {
+    if (!recoveryPart || recoveryPart.stage === "delivered" || !validRecovery(draft)) return;
+    const record = { ...draft, id: crypto.randomUUID(), recoveredAt: new Date().toISOString(), by: actor };
+    update(recoveryPart.id, { stage: "delivered", recoveries: [...(recoveryPart.recoveries ?? []), record] },
+      { kind: "stage", text: `Recovery confirmed: ${record.cause}. Stage moved to 5. Cleared & Delivered.` });
+    setRecoveryId(null);
   };
   const importReport: Ctx["importReport"] = (grid, mapping, mode) => {
     const result = validateReport(grid, mapping, parts, mode);
@@ -210,8 +228,9 @@ export function HubProvider({ children }: { children: ReactNode }) {
     logActivity(`Loaded ${seed.length} sample parts into the shared board.`);
   };
   return (
-    <HubCtx.Provider value={{ importReport, roleView, setRoleView, updateOrder, parts, commercialMode, setCommercialMode, update, reset, viewer, actor, sync, activity, loadSampleIntoCloud }}>
+    <HubCtx.Provider value={{ moveStage, importReport, roleView, setRoleView, updateOrder, parts, commercialMode, setCommercialMode, update, reset, viewer, actor, sync, activity, loadSampleIntoCloud }}>
       {children}
+      {recoveryPart && <RecoveryDialog key={recoveryPart.id} part={recoveryPart} onCancel={() => setRecoveryId(null)} onSave={confirmRecovery} />}
       <div role="status" aria-live="polite" className="sr-only">{announce}</div>
     </HubCtx.Provider>
   );

@@ -77,7 +77,7 @@ export function ShortageTable({ parts, onOpen, density = "standard" }: { parts: 
 }
 
 export function StageSelect({ part, className }: { part: Part; className?: string }) {
-  const { update } = useHub();
+  const { moveStage } = useHub();
   return (
     <select
       aria-label={`Move ${part.partNumber} to stage`}
@@ -89,7 +89,7 @@ export function StageSelect({ part, className }: { part: Part; className?: strin
         const v = e.target.value;
         const s = STAGES.find((x) => x.id === v);
         if (!s) return;
-        update(part.id, { stage: s.id }, { kind: "stage", text: `Stage moved to ${s.n}. ${s.label}` });
+        moveStage(part.id, s.id);
       }}
     >
       {STAGES.map((s) => <option key={s.id} value={s.id}>{s.n}. {s.label}</option>)}
@@ -98,7 +98,7 @@ export function StageSelect({ part, className }: { part: Part; className?: strin
 }
 
 export function KanbanBoard({ parts, onOpen }: { parts: Part[]; onOpen: (id: string) => void }) {
-  const { update } = useHub();
+  const { moveStage } = useHub();
   const [over, setOver] = useState<Stage | null>(null);
   return (
     <div className="grid grid-flow-col auto-cols-[260px] gap-3 overflow-x-auto pb-2 xl:grid-flow-row xl:grid-cols-5 xl:auto-cols-auto">
@@ -114,7 +114,7 @@ export function KanbanBoard({ parts, onOpen }: { parts: Part[]; onOpen: (id: str
               e.preventDefault(); setOver(null);
               const id = e.dataTransfer.getData("text/plain");
               const p = parts.find((x) => x.id === id);
-              if (p && p.stage !== s.id) update(id, { stage: s.id }, { kind: "stage", text: `Stage moved to ${s.n}. ${s.label}` });
+              if (p && p.stage !== s.id) moveStage(id, s.id);
             }}
             role="region"
             aria-label={`${s.label}: ${col.length} parts`}

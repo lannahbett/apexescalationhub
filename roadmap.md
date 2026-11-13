@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Lead-time drift quick filter (+50% and above), tested threshold and search
+- [x] Phase 5: confirmed recovery, root-cause / 5-Why / actual cost records, CAPA ownership and status, configurable improvement widget, Pareto and 30-day repeat-escalation analysis; demo recovery and closed CAPA verified after reload; existing part JSON sync reused, authenticated cloud round-trip unverified
 - [x] SEO failures: descriptive homepage/demo headings, verified distinct social previews on all content pages, router-derived sitemap and robots reference; 64 tests pass, publish and rescan pending
 - [x] Reproduced missing Google sign-in during session checks on /demo; sign-in entry and Google button verified in fresh desktop/phone browsers (Google account completion unverified)
 - [x] Dependency security updates: patched high/critical packages, compatible build-tool versions, 64 passing tests and repeat audits with zero high/critical advisories (five moderate advisories remain)

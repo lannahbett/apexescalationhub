@@ -26,6 +26,7 @@ const NAV = [
   { id: "board", label: "Shortage board", icon: Table2 },
   { id: "tools", label: "AI & data tools", icon: Sparkles },
   { id: "shipping", label: "Shipping & customs", icon: Truck },
+  { id: "improvement", label: "Continuous improvement", icon: ChartNoAxesCombined },
   { id: "connectors", label: "Connectors", icon: Plug },
   { id: "perspective", label: "Role perspective", icon: Users },
 ] as const;

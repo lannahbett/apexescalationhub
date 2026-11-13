@@ -50,6 +50,57 @@ export interface Part {
   leadTime?: LeadTimeSignal | undefined;
   inboundFreight?: FreightMode;
   inboundReference?: string;
+  recoveries?: RecoveryRecord[];
+}
+
+export const ROOT_CAUSES = {
+  tier2: "Tier-2 / raw material shortage",
+  breakdown: "Supplier machine / tooling breakdown",
+  customs: "Carrier / customs hold",
+  yield: "Internal scrap / yield loss",
+  demand: "Demand forecast spike",
+  planning: "PO placement / planning delay",
+  other: "Other / under investigation",
+} as const;
+export type RootCause = keyof typeof ROOT_CAUSES;
+export interface RecoveryRecord {
+  id: string; recoveredAt: string; by: string; cause: RootCause;
+  why: string; cost: number | null; owner: string; reference: string;
+  action: string; status: "open" | "in_progress" | "closed";
+  supplier: string; partNumber: string;
+}
+export function validRecovery(r: RecoveryRecord) {
+  return Object.hasOwn(ROOT_CAUSES, r.cause) &&
+    (r.cost === null || (Number.isFinite(r.cost) && r.cost >= 0)) &&
+    r.why.length <= 2000 && r.action.length <= 2000 && r.owner.length <= 80 && r.reference.length <= 120 &&
+    ["open", "in_progress", "closed"].includes(r.status) &&
+    (r.status !== "closed" || (!!r.owner.trim() && !!r.action.trim()));
+}
+/** Count only recorded recoveries; legacy delivered parts are not fabricated history. */
+export function improvementAnalysis(parts: Part[], now = Date.now()) {
+  const records = parts.flatMap((p) => (p.recoveries ?? []).map((r) => ({ ...r, partId: p.id })));
+  let cumulative = 0;
+  const pareto = Object.entries(ROOT_CAUSES).map(([cause, label]) => ({
+    cause, label, count: records.filter((r) => r.cause === cause).length,
+    ids: [...new Set(records.filter((r) => r.cause === cause).map((r) => r.partId))],
+  })).filter((r) => r.count > 0).sort((a, b) => b.count - a.count).map((r) => {
+    cumulative += r.count;
+    return { ...r, cumulativePct: Math.round(cumulative / records.length * 100) };
+  });
+  const episodes = parts.flatMap((p) => {
+    const initial = p.timeline.filter((t) => t.kind === "note" && t.text.startsWith("Shortage flagged by MRP run:")).map((t) => t.at).sort()[0];
+    const starts = [initial, ...p.timeline.filter((t) => t.kind === "stage" && t.text.startsWith("Escalation reopened:")).map((t) => t.at)];
+    return [...new Set(starts)].filter((at): at is string => !!at && Date.parse(at) >= now - 30 * 86400000 && Date.parse(at) <= now)
+      .map((at) => ({ at, supplier: p.supplier, partNumber: p.partNumber, id: p.id }));
+  });
+  const repeat = (key: "supplier" | "partNumber") => [...new Set(episodes.map((e) => e[key]))].map((name) => ({
+    name, count: episodes.filter((e) => e[key] === name).length,
+    ids: [...new Set(episodes.filter((e) => e[key] === name).map((e) => e.id))],
+  })).filter((r) => r.count > 2).sort((a, b) => b.count - a.count);
+  return { records, pareto, suppliers: repeat("supplier"), parts: repeat("partNumber"),
+    knownCosts: records.filter((r) => r.cost !== null).length,
+    totalCost: records.reduce((s, r) => s + (r.cost ?? 0), 0),
+    openActions: records.filter((r) => r.status !== "closed").length };
 }
 
 export const ROLE_VIEWS = [
@@ -271,7 +322,7 @@ export function buildSeed(): Part[] {
   });
 }
 
-export type FilterId = "all" | "critical" | "stalled" | "mine" | "due48" | "demand";
+export type FilterId = "all" | "critical" | "stalled" | "mine" | "due48" | "demand" | "leadtime";
 export const FILTERS: { id: FilterId; label: string }[] = [
   { id: "all", label: "All" },
   { id: "critical", label: "Line Down / Critical" },
@@ -279,6 +330,7 @@ export const FILTERS: { id: FilterId; label: string }[] = [
   { id: "mine", label: `My Parts (${CURRENT_USER})` },
   { id: "due48", label: "Due < 48h" },
   { id: "demand", label: "Abnormal Demand" },
+  { id: "leadtime", label: "Lead-Time Drift ≥50%" },
 ];
 
 export function filterParts(parts: Part[], filter: FilterId, q: string) {
@@ -289,6 +341,7 @@ export function filterParts(parts: Part[], filter: FilterId, q: string) {
     if (filter === "mine" && p.planner !== CURRENT_USER) return false;
     if (filter === "due48" && p.hoursToLineStop > 48) return false;
     if (filter === "demand" && !isAbnormalDemand(p.demand)) return false;
+    if (filter === "leadtime" && leadTimeDriftPct(p.leadTime) < 50) return false;
     if (!query) return true;
     return [p.partNumber, p.planner, p.supplier, p.po, p.description, p.category, ...(p.orders ?? []).flatMap((o) => [o.customer, o.so])].some((v) => v.toLowerCase().includes(query));
   });
