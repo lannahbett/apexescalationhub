@@ -9,6 +9,7 @@ import {
   Sparkles,
   ChartNoAxesCombined,
   Compass,
+  Plug,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ const NAV = [
   { id: "analytics", label: "Visual analytics", icon: ChartNoAxesCombined },
   { id: "board", label: "Shortage board", icon: Table2 },
   { id: "tools", label: "AI & data tools", icon: Sparkles },
+  { id: "connectors", label: "Connectors", icon: Plug },
   { id: "perspective", label: "Role perspective", icon: Users },
 ] as const;
 

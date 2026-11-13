@@ -15,6 +15,7 @@ import { ExportDialog } from "@/components/hub/export-dialog";
 import { BriefingDialog, InboundParserDialog } from "@/components/hub/ai-tools";
 import { AppSidebar, MobileNav } from "@/components/hub/app-sidebar";
 import { ApexLogo } from "@/components/brand/apex-logo";
+import { ConnectorsHub } from "@/components/hub/connectors-hub";
 import { ModularDashboard } from "@/components/hub/modular-dashboard";
 
 export const Route = createFileRoute("/demo")({
@@ -141,6 +142,7 @@ function Hub() {
           <h2 className="sr-only">Shortages ({shown.length})</h2>
           {view === "table" ? roleView === "planner" ? <ShortageTable parts={shown} onOpen={setOpen} density={density} /> : <RoleBoard parts={shown} onOpen={setOpen} density={density} /> : <KanbanBoard parts={shown} onOpen={setOpen} />}
         </section>
+        <ConnectorsHub />
       </main>
       <PartSheet partId={open} onClose={() => setOpen(null)} />
       </div>
