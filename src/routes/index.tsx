@@ -14,12 +14,14 @@ import { Button } from "@/components/ui/button";
 import { ApexLogo } from "@/components/brand/apex-logo";
 import floor from "@/assets/manufacturing-floor.jpg";
 import { ProductShowcase } from "@/components/vision/product-showcase";
+import { VideoTour } from "@/components/vision/video-tour";
+import { FeedbackForm } from "@/components/vision/feedback-form";
 
 export const Route = createFileRoute("/")({
   staticData: { sitemap: true },
   head: () => ({
     meta: [
-      { title: "Apex Escalation Hub — From Shortage to Coordinated Action" },
+      { title: "Apex Escalation Hub | From Shortage to Coordinated Action" },
       {
         name: "description",
         content:
@@ -27,7 +29,7 @@ export const Route = createFileRoute("/")({
       },
       {
         property: "og:title",
-        content: "Apex Escalation Hub — From Shortage to Coordinated Action",
+        content: "Apex Escalation Hub | From Shortage to Coordinated Action",
       },
       {
         property: "og:description",
@@ -46,28 +48,28 @@ const personas = [
     role: "Material planners",
     question: "What could stop the line next?",
     value:
-      "Prioritize missing parts by urgency, production value and recovery confidence. Keep the next action and its owner visible.",
+      "Open the board at 08:00 and know which part stops your line first, who owns it and what happens next. No more rebuilding the list every morning.",
   },
   {
     icon: ShoppingCart,
     role: "Order Management",
     question: "Which customer promise is at risk?",
     value:
-      "See customer orders linked to missing parts, compare committed dates and record confirmed date changes or cancellations.",
+      "When a customer calls, you already know which of their orders a missing part blocks and whether the committed date still holds.",
   },
   {
     icon: Users,
     role: "Buyers & procurement",
     question: "Where does a supplier need our help?",
     value:
-      "Compare planned and actual lead times, identify stalled updates and prepare focused supplier escalation messages.",
+      "See which suppliers went quiet or are drifting past their lead time, and send a clear escalation in minutes instead of an hour.",
   },
   {
     icon: Factory,
     role: "Plant supply chain leaders",
     question: "Where should we focus today?",
     value:
-      "Review production exposure, workflow bottlenecks and customer impact before aligning the daily recovery priorities.",
+      "Walk into the standup with one picture of production risk and customer exposure, so the meeting ends with decisions, not more questions.",
   },
 ];
 function BusinessVision() {
@@ -104,14 +106,14 @@ function BusinessVision() {
               Manufacturing · Daily shortage decisions
             </p>
             <h1 className="max-w-2xl text-4xl font-semibold leading-tight md:text-5xl">
-              Apex Escalation Hub — Manufacturing shortage decisions
+              Know which missing part hurts your customer most, before the customer calls.
             </h1>
             <p className="mt-5 max-w-xl text-xl leading-relaxed">
-              A missing part should not become a missed customer promise.
+              Apex Escalation Hub gives planners, buyers and Order Management one shared shortage board for the morning standup.
             </p>
             <p className="mt-4 max-w-lg text-base leading-relaxed text-vision-muted">
-              Connect the production risk, the supplier recovery plan and the customer commitment —
-              so every team can agree on what happens next.
+              Stop chasing answers across spreadsheets and email threads. See the line risk, the
+              supplier status and the customer date in one place, and leave the meeting with a plan.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button asChild className="bg-vision-foreground text-primary hover:bg-vision-muted">
@@ -127,6 +129,7 @@ function BusinessVision() {
                 <a href="#business-context">Why it matters</a>
               </Button>
             </div>
+            <div className="mt-6"><VideoTour /></div>
             <p className="mt-5 text-xs text-vision-muted">
               Working prototype · sample data available · no ERP write-back
             </p>
@@ -152,11 +155,11 @@ function BusinessVision() {
               <p>
                 When those answers live in separate spreadsheets and email threads, urgency gets
                 lost. Teams can pay for an expedite without knowing whether it protects the customer
-                date — or change a promise without seeing the production blocker.
+                date, or change a promise without seeing the production blocker.
               </p>
               <p className="font-medium text-foreground">
-                Apex brings those decisions into one focused view. It supports the morning standup,
-                the recovery conversation and the next confirmed action.
+                Sound familiar? With Apex, everyone opens the same board. In ten minutes you agree what
+                to chase, what to tell the customer and who does it.
               </p>
             </div>
           </div>
@@ -167,7 +170,7 @@ function BusinessVision() {
               A shared operational picture
             </p>
             <h2 className="mt-3 text-3xl font-semibold">
-              Different responsibilities. Connected decisions.
+              Picture your own morning with Apex.
             </h2>
           </div>
           <div className="mt-8 grid gap-x-8 gap-y-6 md:grid-cols-2">
@@ -221,7 +224,7 @@ function BusinessVision() {
         <section className="mx-auto grid max-w-7xl gap-10 px-5 py-14 md:grid-cols-2 md:px-8">
           <div>
             <ChartNoAxesCombined className="size-7 text-info" />
-            <h2 className="mt-4 text-2xl font-semibold">Useful today. Honest about what’s next.</h2>
+            <h2 className="mt-4 text-2xl font-semibold">Built for your process, not instead of it.</h2>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
               Designed for manufacturing teams handling material shortages, supplier recovery and
               customer delivery commitments. Apex complements your existing planning process; it is
@@ -257,21 +260,34 @@ function BusinessVision() {
             <div className="border-t pt-5">
               <h3 className="font-semibold">Planned, not connected yet</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Shared cloud boards, live multi-user collaboration, centralized audit history,
-                direct ERP connectors and outbound document readiness. Board changes currently stay
-                in the browser you use.
+                Direct connections to SAP, Outlook, Teams and Power BI. Today you bring your data in
+                with a validated Excel or SAP export, and the demo keeps your changes private in
+                your own browser.
               </p>
             </div>
+          </div>
+        </section>
+        <section id="feedback" className="border-t bg-secondary">
+          <div className="mx-auto grid max-w-7xl gap-8 px-5 py-12 md:grid-cols-[1fr_1.2fr] md:px-8">
+            <div>
+              <p className="text-xs font-semibold uppercase text-info">Your feedback</p>
+              <h2 className="mt-3 text-3xl font-semibold">Does this solve your shortage problem?</h2>
+              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                Tell us what works, what is missing and how your team handles shortages today. Every
+                message is read personally.
+              </p>
+            </div>
+            <FeedbackForm />
           </div>
         </section>
         <section className="bg-sidebar text-sidebar-foreground">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-6 px-5 py-12 md:px-8">
             <div>
               <h2 className="text-2xl font-semibold">
-                Make the next shortage conversation clearer.
+                Try tomorrow's standup today.
               </h2>
               <p className="mt-3 text-sm text-sidebar-foreground/80">
-                Start with the sample board, then evaluate your own validated report.
+                Open the sample board, play the role you work in and see the difference in five minutes.
               </p>
             </div>
             <Button

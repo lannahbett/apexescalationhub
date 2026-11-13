@@ -24,9 +24,9 @@ export const Route = createFileRoute("/demo")({
   staticData: { sitemap: true },
   head: () => ({
     meta: [
-      { title: "Apex Escalation Hub — Daily Operations Dashboard" },
+      { title: "Apex Escalation Hub | Daily Operations Dashboard" },
       { name: "description", content: "Personalize your manufacturing dashboard, act on critical shortages and explore guided practice scenarios." },
-      { property: "og:title", content: "Apex Escalation Hub — Daily Operations Dashboard" },
+      { property: "og:title", content: "Apex Escalation Hub | Daily Operations Dashboard" },
       { property: "og:description", content: "Critical parts, supplier delivery drift and customer commitments in a customizable action dashboard." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

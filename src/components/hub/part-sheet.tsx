@@ -82,7 +82,7 @@ export function PartSheet({ partId, onClose }: { partId: string | null; onClose:
                         <div className={d >= 50 ? "font-semibold text-critical" : "text-muted-foreground"}>+{d}% drift · supplier OTD {part.leadTime.otdPct}%</div>
                       </div>); })()}
                   </div>
-                  <p className="mt-1.5 text-[11px] text-muted-foreground">Sample signals — will come from ERP once imports are live.</p>
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">Sample signals, will come from ERP once imports are live.</p>
                 </section>
               )}
 
@@ -238,7 +238,7 @@ function ConfidenceDialog({ part, open, onOpenChange }: { part: Part; open: bool
         <Textarea aria-label="Reason for confidence change" required value={note} onChange={(e) => setNote(e.target.value)} placeholder="Why is confidence changing? (required)" className="text-xs" />
         <DialogFooter>
           <Button disabled={!note.trim()} onClick={() => {
-            update(part.id, { confidence: val }, { kind: "confidence", text: `Confidence set to ${CONFIDENCE[val].label} — ${note.trim()}` });
+            update(part.id, { confidence: val }, { kind: "confidence", text: `Confidence set to ${CONFIDENCE[val].label}, ${note.trim()}` });
             toast.success("Fix confidence updated");
             onOpenChange(false);
           }}>Save</Button>

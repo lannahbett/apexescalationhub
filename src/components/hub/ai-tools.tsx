@@ -87,7 +87,7 @@ export function InboundParserDialog() {
       if (!picked.has(i)) return;
       update(c.partId, { [c.field]: c.to } as Partial<Part>, {
         kind: c.field === "stage" ? "stage" : c.field === "confidence" ? "confidence" : "date",
-        text: `Confirmed from supplier update: ${label(c, c.from)} → ${label(c, c.to)}${c.evidence ? ` — “${c.evidence}”` : ""}`,
+        text: `Confirmed from supplier update: ${label(c, c.from)} → ${label(c, c.to)}${c.evidence ? `, “${c.evidence}”` : ""}`,
       });
     });
     toast.success(`${picked.size} change(s) applied`);
@@ -108,7 +108,7 @@ export function InboundParserDialog() {
           <p className="rounded border bg-muted/40 p-3 text-sm">No valid changes for parts on this board were found.</p>
         ) : (
           <fieldset className="max-h-[50dvh] space-y-2 overflow-y-auto">
-            <legend className="mb-2 text-xs text-muted-foreground">Proposed changes — select the ones you confirm</legend>
+            <legend className="mb-2 text-xs text-muted-foreground">Proposed changes, select the ones you confirm</legend>
             {changes.map((c, i) => (
               <label key={i} className="flex min-h-11 cursor-pointer gap-3 rounded border p-2 text-xs">
                 <Checkbox className="size-11 shrink-0" checked={picked.has(i)}

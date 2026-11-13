@@ -29,6 +29,13 @@
       "when": 1794562118899,
       "tag": "0003_restrict_board_reads_to_members",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794574587337,
+      "tag": "0004_migration",
+      "breakpoints": true
     }
   ]
 }

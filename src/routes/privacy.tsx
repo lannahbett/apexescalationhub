@@ -5,9 +5,9 @@ export const Route = createFileRoute("/privacy")({
   staticData: { sitemap: true },
   head: () => ({
     meta: [
-      { title: "Privacy Notice — Apex Escalation Hub" },
+      { title: "Privacy Notice | Apex Escalation Hub" },
       { name: "description", content: "How Apex Escalation Hub handles sign-in, the shared team board, browser storage, AI requests and uploaded files." },
-      { property: "og:title", content: "Privacy Notice — Apex Escalation Hub" },
+      { property: "og:title", content: "Privacy Notice | Apex Escalation Hub" },
       { property: "og:description", content: "What Apex Escalation Hub collects, why, who receives it, how long it is kept and your rights." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -41,6 +41,8 @@ function Privacy() {
       <h2>5. AI features</h2>
       <p>When you use the standup briefing, supplier escalation drafter or inbound update reader, the relevant board details and any text you paste or type (such as a supplier email or sender name) are sent through our server to Groq, Inc., an AI provider, to generate the response. We do not store this content ourselves. Groq processes it under its own terms and may handle it outside the EU. Do not paste personal, confidential or customer data you are not authorised to share.</p>
 
+      <h3>Feedback form</h3>
+      <p>If you send feedback from the home page, we store your message, rating, chosen area and, only if you enter it, your email address. We use it solely to improve the Platform and to reply to you. It is never sold or published. You can ask for it to be deleted at any time.</p>
       <h2>6. Visitor analytics</h2>
       <p>We use Lovable's built-in visitor analytics. It uses no cookies, stores nothing on your device, doesn't keep IP addresses and doesn't identify visitors. Lovable collects this data for us. <a className="underline" href="https://lovable.dev/privacy">Lovable's privacy policy</a> explains how it handles it.</p>
       <p>On this site it records the pages visited, where visitors came from, their country, browser, operating system and device type, how long they stay, how fast pages load, and errors. Detailed data is kept for 90 days and daily summaries for a year. This is recorded for every visitor, without cookies and without identifying anyone.</p>
@@ -50,10 +52,10 @@ function Privacy() {
 
       <h2>8. Who receives data</h2>
       <ul>
-        <li>Lovable — hosting, database, sign-in and analytics.</li>
-        <li>Google — Google sign-in (only if you choose it) and fonts.</li>
-        <li>Groq — AI features (only when you use them).</li>
-        <li>Other approved members of the shared board — your name and changes.</li>
+        <li>Lovable, hosting, database, sign-in and analytics.</li>
+        <li>Google, Google sign-in (only if you choose it) and fonts.</li>
+        <li>Groq, AI features (only when you use them).</li>
+        <li>Other approved members of the shared board, your name and changes.</li>
       </ul>
       <p>Some providers may process data outside the European Economic Area under their own safeguards, such as standard contractual clauses. We disclose data to authorities only where legally required.</p>
 

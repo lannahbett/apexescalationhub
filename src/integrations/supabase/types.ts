@@ -77,6 +77,33 @@ export type Database = {
         }
         Relationships: []
       }
+      site_feedback: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          message: string
+          rating: number | null
+          role: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message: string
+          rating?: number | null
+          role?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string
+          rating?: number | null
+          role?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

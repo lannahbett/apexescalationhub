@@ -552,7 +552,7 @@ export function VisualAnalytics({
                     : "font-mono text-critical"
                 }
               >
-                {result ? eur(result.netSaving) : "—"}
+                {result ? eur(result.netSaving) : "-"}
               </strong>
             </span>
             <Button

@@ -10,22 +10,22 @@ const chapters = [
     points: ["Shortages tracked in separate spreadsheets", "Customer impact discovered late", "Expedite decisions made without the full picture"],
     where: "Starting point: the business problem" },
   { id: "command", icon: LayoutDashboard, label: "One shared board", title: "Each team sees its own priorities on the same data",
-    text: "The left menu jumps between today's priorities, the shortage board, analytics and tools. Switch perspective — planner, Order Management, buyer or plant manager — without changing the shared board.",
+    text: "The left menu jumps between today's priorities, the shortage board, analytics and tools. Switch perspective, planner, Order Management, buyer or plant manager, without changing the shared board.",
     points: ["Risk score and hours to line stop per part", "Table or drag-and-drop workflow stages", "Dashboard widgets you can reorder and hide"],
     where: "In the demo: left menu → Shortage board / Role perspective" },
   { id: "money", icon: Euro, label: "Customer impact & AI", title: "See which customer promise each missing part puts at risk",
     text: "Every part is linked to the customer orders it blocks. Track priority tiers, contractual late fees, or both. Compare an air-freight cost against the fees it could avoid, and let AI draft the supplier escalation.",
-    points: ["Tiers, penalties or both — your choice", "Expedite comparisons are estimates, never bookings", "AI suggestions apply only after you confirm them"],
+    points: ["Tiers, penalties or both, your choice", "Expedite comparisons are estimates, never bookings", "AI suggestions apply only after you confirm them"],
     where: "In the demo: Customer orders · Visual analytics · AI tools" },
   { id: "ship", icon: Ship, label: "Shipping & data", title: "From a recovered part to a shipped order",
-    text: "The shipping section lists only the documents each order needs for its transport and destination, explained in plain language. Import SAP ECC or Excel exports — every row is checked before anything changes.",
+    text: "The shipping section lists only the documents each order needs for its transport and destination, explained in plain language. Import SAP ECC or Excel exports, every row is checked before anything changes.",
     points: ["Air waybill, road and sea documents per order", "SAP column names and date formats recognised", "Exports for the standup and for Power BI"],
     where: "In the demo: Shipping & customs · Import / export" },
 ] as const;
 
 function Mock({ id }: { id: string }) {
   const bar = (w: string, c: string) => <div className={cn("h-2 rounded-full", c)} style={{ width: w }} />;
-  if (id === "crisis") return <div className="grid gap-2">{["Spreadsheet v7 — final(2).xlsx", "RE: RE: RE: motor delay?", "Customer asking for date", "Line 3 stops in 6h"].map((t, i) => <div key={t} className={cn("rounded-md border bg-card p-3 text-xs font-mono", i === 3 && "border-critical text-critical")}>{t}</div>)}</div>;
+  if (id === "crisis") return <div className="grid gap-2">{["Spreadsheet v7, final(2).xlsx", "RE: RE: RE: motor delay?", "Customer asking for date", "Line 3 stops in 6h"].map((t, i) => <div key={t} className={cn("rounded-md border bg-card p-3 text-xs font-mono", i === 3 && "border-critical text-critical")}>{t}</div>)}</div>;
   if (id === "command") return <div className="flex gap-2"><div className="w-1/4 space-y-2 rounded-md bg-sidebar p-2">{[1,2,3,4,5].map((i) => <div key={i} className={cn("h-3 rounded", i === 2 ? "bg-sidebar-primary" : "bg-sidebar-accent")} />)}</div><div className="flex-1 space-y-2">{[["90%","bg-critical"],["70%","bg-elevated"],["55%","bg-elevated"],["30%","bg-success"]].map(([w,c]) => <div key={w} className="rounded-md border bg-card p-2">{bar(w!, c!)}</div>)}</div></div>;
   if (id === "money") return <div className="space-y-3 rounded-md border bg-card p-3 text-xs"><div className="flex justify-between"><span>Projected late fees</span><span className="font-mono text-critical">€10,000</span></div><div className="flex justify-between"><span>Air freight cost</span><span className="font-mono">€1,800</span></div><div className="flex justify-between border-t pt-2 font-semibold"><span>Estimated benefit</span><span className="font-mono text-success">€3,200</span></div><p className="text-muted-foreground">Sample figures</p></div>;
   return <div className="space-y-2 text-xs">{[["Delivery note", true],["Commercial invoice", true],["Air waybill", false]].map(([t, ok]) => <div key={String(t)} className="flex items-center justify-between rounded-md border bg-card p-2"><span>{t}</span><span className={ok ? "text-success" : "text-critical"}>{ok ? "✓ Ready" : "○ Missing"}</span></div>)}</div>;

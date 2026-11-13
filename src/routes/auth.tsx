@@ -12,9 +12,9 @@ export const Route = createFileRoute("/auth")({
   staticData: { sitemap: false },
   head: () => ({
     meta: [
-      { title: "Sign in — Apex Escalation Hub" },
+      { title: "Sign in | Apex Escalation Hub" },
       { name: "description", content: "Sign in to work on your team's shared, live shortage board." },
-      { property: "og:title", content: "Sign in — Apex Escalation Hub" },
+      { property: "og:title", content: "Sign in | Apex Escalation Hub" },
       { property: "og:description", content: "Join your team's shared, live shortage board." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

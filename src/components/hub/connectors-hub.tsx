@@ -30,14 +30,14 @@ export function ConnectorsHub() {
     ].join("\n");
   }, [parts]);
   const copy = async () => {
-    try { await navigator.clipboard.writeText(summary); setCopied(true); toast.success("Summary copied — paste it in Teams."); setTimeout(() => setCopied(false), 2000); }
-    catch { toast.error("Copy failed — select the text and copy it manually."); }
+    try { await navigator.clipboard.writeText(summary); setCopied(true); toast.success("Summary copied, paste it in Teams."); setTimeout(() => setCopied(false), 2000); }
+    catch { toast.error("Copy failed, select the text and copy it manually."); }
   };
   return (
     <section id="connectors" tabIndex={-1} aria-labelledby="connectors-title" className="space-y-3 border-t pt-5">
       <div>
         <h2 id="connectors-title" className="text-lg font-semibold">Enterprise connectors</h2>
-        <p className="text-xs text-muted-foreground">How Apex fits your SAP ECC and Microsoft 365 tools. These are not connected yet in this prototype — each card shows what works today.</p>
+        <p className="text-xs text-muted-foreground">How Apex fits your SAP ECC and Microsoft 365 tools. These are not connected yet in this prototype, each card shows what works today.</p>
       </div>
       <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {CONNECTORS.map(({ id, name, icon: Icon, role, how, today }) => (

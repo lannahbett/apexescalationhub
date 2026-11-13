@@ -5,9 +5,9 @@ export const Route = createFileRoute("/terms")({
   staticData: { sitemap: true },
   head: () => ({
     meta: [
-      { title: "Terms of Use — Apex Escalation Hub" },
+      { title: "Terms of Use | Apex Escalation Hub" },
       { name: "description", content: "Terms governing access to Apex Escalation Hub: ownership, accounts, shared board, AI features, prohibited use and liability." },
-      { property: "og:title", content: "Terms of Use — Apex Escalation Hub" },
+      { property: "og:title", content: "Terms of Use | Apex Escalation Hub" },
       { property: "og:description", content: "Ownership, permitted use, accounts and restrictions for Apex Escalation Hub." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

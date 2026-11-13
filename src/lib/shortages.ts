@@ -259,7 +259,7 @@ export function buildSeed(): Part[] {
       { at: day(-s.daysLate - 2, 11), kind: "contact", text: `Called ${s.supplier} (${s.supplierContact}); supplier acknowledged backlog.`, by: s.planner },
       { at: day(-s.daysLate, 14), kind: "date", text: `Supplier confirmed date moved by +${Math.max(s.daysLate, 1)} days.`, by: s.planner },
     ];
-    if (s.confidence === "stalled") timeline.push({ at: day(-1, 16), kind: "confidence", text: "Marked Stalled — no ETA provided / engineering hold on drawing revision.", by: s.planner });
+    if (s.confidence === "stalled") timeline.push({ at: day(-1, 16), kind: "confidence", text: "Marked Stalled, no ETA provided / engineering hold on drawing revision.", by: s.planner });
     return {
       ...rest,
       id: `p${i + 1}`,

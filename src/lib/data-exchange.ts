@@ -70,7 +70,7 @@ export async function readReport(file: File): Promise<Grid[]> {
     sheet.eachRow((row) => {
       const cells = Array.from({ length: sheet.columnCount }, (_, i) => {
         const cell = row.getCell(i + 1);
-        if (cell.type === 6) return "[FORMULA — replace with value]";
+        if (cell.type === 6) return "[FORMULA, replace with value]";
         return cell.value instanceof Date ? cell.value.toISOString().slice(0, 10) : cell.text;
       });
       if (cells.some((c) => c.trim())) rows.push(cells);

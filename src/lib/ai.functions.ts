@@ -18,7 +18,7 @@ async function groq(system: string, user: string, json = false): Promise<string>
   });
   if (!res.ok) {
     console.error("Groq error", res.status, await res.text());
-    throw new Error(res.status === 429 ? "AI rate limit reached — try again in a minute." : "AI service unavailable.");
+    throw new Error(res.status === 429 ? "AI rate limit reached, try again in a minute." : "AI service unavailable.");
   }
   const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
   return data.choices?.[0]?.message?.content ?? "";
@@ -88,6 +88,6 @@ export const explainRisk = createServerFn({ method: "POST" })
       true,
     );
     const out = z.object({ drivers: z.array(z.string().max(300)).max(4), nextSteps: z.array(z.string().max(300)).max(3) }).safeParse(JSON.parse(raw || "{}"));
-    if (!out.success) throw new Error("AI returned an unexpected answer — try again.");
+    if (!out.success) throw new Error("AI returned an unexpected answer, try again.");
     return out.data;
   });
