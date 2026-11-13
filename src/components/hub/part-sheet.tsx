@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { CONFIDENCE, CURRENT_USER, DEMAND_SURGE_THRESHOLD, demandSurgePct, leadTimeDriftPct, orderExposure, orderSlipDays, eur, type Confidence, type Part, type TimelineEntry } from "@/lib/shortages";
 import { ConfidencePill, LineStop, PlannerBadge, RiskPill } from "./badges";
 import { StageSelect } from "./board";
+import { RiskExplainer } from "./risk-explainer";
 import { useHub } from "./store";
 import { FreightAndExpedite } from "./order-operations";
 import { CommercialOrders } from "./commercial-orders";
@@ -42,6 +43,7 @@ export function PartSheet({ partId, onClose }: { partId: string | null; onClose:
               <SheetDescription className="text-sidebar-foreground/90">{part.description} · {part.category}</SheetDescription>
             </SheetHeader>
             <div className="space-y-5 p-5">
+              <RiskExplainer key={part.id} part={part} />
               <div className="grid grid-cols-2 gap-3 text-xs">
                 {[
                   ["Line", part.line],
