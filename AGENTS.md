@@ -30,6 +30,7 @@ use the editor.
 <!-- LOVABLE:END -->
 - Signed-in teammates share one board stored as one JSON row per part (board_parts) with realtime updates and an append-only board_activity log; signed-out visitors keep a private localStorage board. Business rules stay in shortages.ts and run client-side, and store.tsx pushes only changed rows (diffParts) to limit overwrites.
 - Sign-in is hybrid: resolveViewer (src/lib/viewer.server.ts) prefers the Lovable workspace identity, else a Google account session; the client picks the matching database client in cloud-board.ts. RLS uses auth.jwt()->>'sub' because Lovable IDs need not be UUIDs.
+- Keep the Google sign-in entry available when no viewer has resolved, including pending session checks; board sync state must not hide the sign-in path.
 
 - Maintain 44px minimum primary control targets and bounded horizontal board scrolling; shared primitives enforce usable phone targets without changing business rules.
 - Use a native select for workflow stages and a separate Button for Kanban details; this avoids nested controls and hidden-but-focusable content from the previous popup.

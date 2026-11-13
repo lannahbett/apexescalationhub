@@ -49,10 +49,11 @@ function AuthPage() {
           <h1 className="text-lg font-semibold">Join your team's shared board</h1>
           <p className="mt-1 text-sm text-muted-foreground">Teammates in your Lovable workspace are recognised automatically. Everyone else can sign in with Google.</p>
         </div>
-        {viewer.isPending ? <p role="status" className="text-sm text-muted-foreground">Checking whether you are already signed in…</p> : (
-          <button type="button" onClick={google} className="inline-flex min-h-11 w-full items-center justify-center gap-[10px] rounded-md border border-[#747775] bg-[#FFFFFF] px-3 text-sm font-medium text-[#1F1F1F]">
+        {viewer.isPending && <p role="status" className="text-sm text-muted-foreground">Checking whether you are already signed in…</p>}
+        {!viewer.data && (
+          <Button type="button" variant="outline" onClick={google} className="min-h-11 w-full gap-[10px] border-google-border bg-google-background px-3 text-sm font-medium text-google-foreground hover:bg-google-background hover:text-google-foreground [&_svg]:size-[18px]">
             <GoogleG /> Continue with Google
-          </button>
+          </Button>
         )}
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         <p className="text-xs text-muted-foreground">Prefer not to sign in? <Link to="/demo" className="underline">Use a private board in this browser</Link>.</p>

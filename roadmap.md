@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Reproduced missing Google sign-in during session checks on /demo; sign-in entry and Google button verified in fresh desktop/phone browsers (Google account completion unverified)
+- [x] Dependency security updates: patched high/critical packages, compatible build-tool versions, 64 passing tests and repeat audits with zero high/critical advisories (five moderate advisories remain)
 - [x] Phase 1: Accessibility & core UX — measured contrast, touch targets, mobile reflow, keyboard checks; manual assistive-technology checks remain
 - [x] Phase 2: Groq AI — standup briefing, AI escalation drafter (tone), inbound update parser with per-change planner confirmation
 - [x] Phase 2b: Customer order pegging + demand / lead-time radar (sample data)

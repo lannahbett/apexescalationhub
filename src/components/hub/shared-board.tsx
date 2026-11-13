@@ -25,7 +25,7 @@ export function SharedBoardStatus() {
         <Icon aria-hidden className={sync === "checking" || sync === "connecting" ? "size-3.5 animate-spin" : "size-3.5"} />
         {LABEL[sync]}
       </span>
-      {!viewer && sync === "local" && <Button asChild size="sm" variant="outline" className="min-h-11"><Link to="/auth">Sign in to share</Link></Button>}
+      {!viewer && <Button asChild size="sm" variant="outline" className="min-h-11"><Link to="/auth">Sign in with Google</Link></Button>}
       {viewer?.door === "account" && <Button size="sm" variant="ghost" className="min-h-11" onClick={signOut}><LogOut aria-hidden /> Sign out</Button>}
     </div>
   );
