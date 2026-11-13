@@ -16,7 +16,8 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { ApexLogo } from "@/components/brand/apex-logo";
-import { CURRENT_USER, initials } from "@/lib/shortages";
+import { initials } from "@/lib/shortages";
+import { useHub } from "./store";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -92,6 +93,7 @@ function NavList({ collapsed, onPick }: { collapsed: boolean; onPick?: () => voi
 }
 
 function UserBadge({ collapsed }: { collapsed: boolean }) {
+  const { actor } = useHub();
   return (
     <div
       className={cn(
@@ -103,9 +105,9 @@ function UserBadge({ collapsed }: { collapsed: boolean }) {
         aria-hidden
         className="grid size-8 shrink-0 place-items-center rounded-full bg-sidebar-accent text-[11px] font-semibold"
       >
-        {initials(CURRENT_USER)}
+        {initials(actor)}
       </span>
-      {!collapsed && <span className="truncate text-xs">{CURRENT_USER}</span>}
+      {!collapsed && <span className="truncate text-xs">{actor}</span>}
     </div>
   );
 }

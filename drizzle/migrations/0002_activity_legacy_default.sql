@@ -1,0 +1,1 @@
+ALTER TABLE public.board_activity ALTER COLUMN actor_id SET DEFAULT gen_random_uuid();

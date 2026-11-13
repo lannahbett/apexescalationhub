@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DemoRouteImport } from './routes/demo'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
@@ -18,6 +19,11 @@ import { Route as VisionRouteImport } from './routes/vision'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DemoRoute = DemoRouteImport.update({
@@ -43,6 +49,7 @@ const VisionRoute = VisionRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/demo': typeof DemoRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/demo': typeof DemoRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/demo': typeof DemoRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
@@ -65,14 +74,15 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/demo' | '/privacy' | '/terms' | '/vision'
+  fullPaths: '/' | '/auth' | '/demo' | '/privacy' | '/terms' | '/vision'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/demo' | '/privacy' | '/terms' | '/vision'
-  id: '__root__' | '/' | '/demo' | '/privacy' | '/terms' | '/vision'
+  to: '/' | '/auth' | '/demo' | '/privacy' | '/terms' | '/vision'
+  id: '__root__' | '/' | '/auth' | '/demo' | '/privacy' | '/terms' | '/vision'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
   DemoRoute: typeof DemoRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
@@ -86,6 +96,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demo': {
@@ -121,6 +138,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
   DemoRoute: DemoRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,

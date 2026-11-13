@@ -1,5 +1,27 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794560423303,
+      "tag": "0000_shared_board",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794560477957,
+      "tag": "0001_identity_safe_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794560485886,
+      "tag": "0002_activity_legacy_default",
+      "breakpoints": true
+    }
+  ]
 }

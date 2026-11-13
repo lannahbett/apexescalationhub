@@ -14,7 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      board_activity: {
+        Row: {
+          actor_id: string
+          actor_name: string
+          actor_sub: string
+          at: string
+          id: string
+          summary: string
+        }
+        Insert: {
+          actor_id?: string
+          actor_name: string
+          actor_sub?: string
+          at?: string
+          id?: string
+          summary: string
+        }
+        Update: {
+          actor_id?: string
+          actor_name?: string
+          actor_sub?: string
+          at?: string
+          id?: string
+          summary?: string
+        }
+        Relationships: []
+      }
+      board_parts: {
+        Row: {
+          data: Json
+          id: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          data: Json
+          id: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Update: {
+          data?: Json
+          id?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

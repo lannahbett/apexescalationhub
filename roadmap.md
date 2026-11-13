@@ -6,7 +6,7 @@
 - [x] Role perspectives: planner, Order Management, buyer and plant manager views + focused AI briefings
 - [x] Order operations: confirmed pull-in, push-out, cancellation, inbound/outbound freight modes and expedite scenarios (browser-saved; no ERP write-back or stock deallocation)
 - [x] Phase 3: Validated CSV/XLSX import, column mapping, confirmed merge/replace, board and standup exports (browser-saved; notes/checklists excluded from exports)
-- [ ] Phase 4: Cloud multi-user sync
+- [x] Phase 4: Shared cloud board with live updates, team activity log and hybrid sign-in (workspace identity + Google); signed-in flow not yet tested with a real account
 - [x] Power BI-style visual analytics with board drill-through and read-only expedite comparisons
 - [x] Business vision landing page with accurate capabilities and workspace navigation
 - [x] Customizable action dashboard: six widgets, visibility, ordering, density and analysis scope; preferences saved per perspective in this browser

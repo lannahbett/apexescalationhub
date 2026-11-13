@@ -18,6 +18,7 @@ import { ApexLogo } from "@/components/brand/apex-logo";
 import { ShippingGate } from "@/components/hub/shipping-gate";
 import { ConnectorsHub } from "@/components/hub/connectors-hub";
 import { ModularDashboard } from "@/components/hub/modular-dashboard";
+import { ActivityFeed, SharedBoardEmpty, SharedBoardStatus } from "@/components/hub/shared-board";
 
 export const Route = createFileRoute("/demo")({
   head: () => ({
@@ -79,8 +80,10 @@ function Hub() {
               {ROLE_VIEWS.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
             </select>
           </label>
-          <span className="text-[11px] text-muted-foreground">{parts.some((p) => p.timeline.some((t) => t.text.startsWith("ERP import:"))) ? "Imported board" : "Sample board"} · saved in this browser</span>
+          <SharedBoardStatus />
         </section>
+        <SharedBoardEmpty />
+        <ActivityFeed />
          <div id="dashboard" tabIndex={-1}><ModularDashboard onOpen={setOpen} onFocus={(ids, label) => {
            setQ(""); setFilter("all"); setDashboardFocus({ ids, label });
            requestAnimationFrame(() => { document.getElementById("board")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); document.getElementById("board")?.focus({ preventScroll: true }); });

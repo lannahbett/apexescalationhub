@@ -28,7 +28,8 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
-- Board data remains in a client-side store (src/components/hub/store.tsx) persisted to localStorage, seeded from src/lib/shortages.ts; Cloud is connected but board sync is deferred, so keep business rules (risk tiers, KPIs, filters) in shortages.ts where tests cover them.
+- Signed-in teammates share one board stored as one JSON row per part (board_parts) with realtime updates and an append-only board_activity log; signed-out visitors keep a private localStorage board. Business rules stay in shortages.ts and run client-side, and store.tsx pushes only changed rows (diffParts) to limit overwrites.
+- Sign-in is hybrid: resolveViewer (src/lib/viewer.server.ts) prefers the Lovable workspace identity, else a Google account session; the client picks the matching database client in cloud-board.ts. RLS uses auth.jwt()->>'sub' because Lovable IDs need not be UUIDs.
 
 - Maintain 44px minimum primary control targets and bounded horizontal board scrolling; shared primitives enforce usable phone targets without changing business rules.
 - Use a native select for workflow stages and a separate Button for Kanban details; this avoids nested controls and hidden-but-focusable content from the previous popup.

@@ -1,0 +1,12 @@
+DROP POLICY "Signed-in teammates add parts" ON public.board_parts;
+DROP POLICY "Signed-in teammates update parts" ON public.board_parts;
+DROP POLICY "Signed-in teammates remove parts" ON public.board_parts;
+CREATE POLICY "Signed-in teammates add parts" ON public.board_parts FOR INSERT TO authenticated WITH CHECK ((auth.jwt() ->> 'sub') IS NOT NULL);
+CREATE POLICY "Signed-in teammates update parts" ON public.board_parts FOR UPDATE TO authenticated USING ((auth.jwt() ->> 'sub') IS NOT NULL) WITH CHECK ((auth.jwt() ->> 'sub') IS NOT NULL);
+CREATE POLICY "Signed-in teammates remove parts" ON public.board_parts FOR DELETE TO authenticated USING ((auth.jwt() ->> 'sub') IS NOT NULL);
+DROP POLICY "Teammates log their own activity" ON public.board_activity;
+ALTER TABLE public.board_activity ALTER COLUMN actor_id DROP DEFAULT;
+ALTER TABLE public.board_activity ALTER COLUMN actor_id SET DEFAULT NULL;
+COMMENT ON COLUMN public.board_activity.actor_id IS 'DEPRECATED: replaced by actor_sub';
+ALTER TABLE public.board_activity ADD COLUMN actor_sub text NOT NULL DEFAULT (auth.jwt() ->> 'sub');
+CREATE POLICY "Teammates log their own activity" ON public.board_activity FOR INSERT TO authenticated WITH CHECK (actor_sub = (auth.jwt() ->> 'sub'));
