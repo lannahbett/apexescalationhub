@@ -41,6 +41,21 @@ export type Database = {
         }
         Relationships: []
       }
+      board_members: {
+        Row: {
+          added_at: string
+          sub: string
+        }
+        Insert: {
+          added_at?: string
+          sub: string
+        }
+        Update: {
+          added_at?: string
+          sub?: string
+        }
+        Relationships: []
+      }
       board_parts: {
         Row: {
           data: Json
@@ -67,7 +82,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_board_member: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
