@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { ApexLogo } from "@/components/brand/apex-logo";
 import floor from "@/assets/manufacturing-floor.jpg";
 import { ProductShowcase } from "@/components/vision/product-showcase";
-import launchFilm from "@/assets/videos/apex-launch-film.mp4.asset.json";
 
 export const Route = createFileRoute("/")({
   staticData: { sitemap: true },
@@ -131,24 +130,6 @@ function BusinessVision() {
             <p className="mt-5 text-xs text-vision-muted">
               Working prototype · sample data available · no ERP write-back
             </p>
-          </div>
-        </section>
-        <section aria-labelledby="launch-film" className="border-b bg-card">
-          <div className="mx-auto max-w-7xl px-5 py-12 md:px-8">
-            <p className="text-xs font-semibold uppercase text-info">Launch film</p>
-            <h2 id="launch-film" className="mt-3 text-3xl font-semibold leading-tight">
-              From the factory floor to a confirmed decision
-            </h2>
-            <video
-              className="mt-6 aspect-video w-full rounded-lg border bg-sidebar object-cover"
-              src={launchFilm.url}
-              poster={floor}
-              controls
-              muted
-              playsInline
-              preload="metadata"
-              aria-label="Apex Escalation Hub launch film"
-            />
           </div>
         </section>
         <ProductShowcase />
