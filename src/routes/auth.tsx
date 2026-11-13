@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getViewer } from "@/lib/viewer.functions";
 
 export const Route = createFileRoute("/auth")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Sign in — Apex Escalation Hub" },

@@ -1,4 +1,5 @@
 # Roadmap
+- [x] SEO failures: descriptive homepage/demo headings, verified distinct social previews on all content pages, router-derived sitemap and robots reference; 64 tests pass, publish and rescan pending
 - [x] Reproduced missing Google sign-in during session checks on /demo; sign-in entry and Google button verified in fresh desktop/phone browsers (Google account completion unverified)
 - [x] Dependency security updates: patched high/critical packages, compatible build-tool versions, 64 passing tests and repeat audits with zero high/critical advisories (five moderate advisories remain)
 - [x] Phase 1: Accessibility & core UX — measured contrast, touch targets, mobile reflow, keyboard checks; manual assistive-technology checks remain

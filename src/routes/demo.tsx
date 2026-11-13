@@ -21,6 +21,7 @@ import { ModularDashboard } from "@/components/hub/modular-dashboard";
 import { ActivityFeed, SharedBoardEmpty, SharedBoardStatus } from "@/components/hub/shared-board";
 
 export const Route = createFileRoute("/demo")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Apex Escalation Hub — Daily Operations Dashboard" },
@@ -63,7 +64,7 @@ function Hub() {
             <MobileNav />
             <div className="md:hidden"><ApexLogo compact /></div>
             <div className="min-w-0">
-              <h1 className="text-sm font-semibold leading-tight">Apex Escalation Hub</h1>
+              <h1 className="text-sm font-semibold leading-tight">Daily manufacturing shortage dashboard</h1>
               <div className="text-[11px] text-sidebar-foreground/80">Morning standup · {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</div>
             </div>
           </div>

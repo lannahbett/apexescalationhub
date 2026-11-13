@@ -17,6 +17,7 @@ import { ProductShowcase } from "@/components/vision/product-showcase";
 import launchFilm from "@/assets/videos/apex-launch-film.mp4.asset.json";
 
 export const Route = createFileRoute("/")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Apex Escalation Hub — From Shortage to Coordinated Action" },
@@ -104,7 +105,7 @@ function BusinessVision() {
               Manufacturing · Daily shortage decisions
             </p>
             <h1 className="max-w-2xl text-4xl font-semibold leading-tight md:text-5xl">
-              Apex Escalation Hub
+              Apex Escalation Hub — Manufacturing shortage decisions
             </h1>
             <p className="mt-5 max-w-xl text-xl leading-relaxed">
               A missing part should not become a missed customer promise.
