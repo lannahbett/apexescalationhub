@@ -25,3 +25,32 @@ describe("order operations", () => {
   it("tiers-only never counts penalty savings", () => expect(expediteComparison([part], part.id, 2, 1800, 1000, "tiers")?.netSaving).toBe(200));
   it("rejects fractional days, negative costs and delivered scenarios", () => { expect(expediteComparison([part], part.id, 1.5, 0, 0, "dual")).toBeNull(); expect(expediteComparison([part], part.id, 1, -1, 0, "dual")).toBeNull(); expect(expediteComparison([{ ...part, stage: "delivered" }], part.id, 1, 0, 0, "dual")).toBeNull(); });
 });
+
+import { requiredShippingDocs, shippingReadiness } from "./shortages";
+import { autoMapping, isSapLayout, sapNumber } from "./data-exchange";
+describe("shipping gate and SAP import", () => {
+  const base = { so: "SO-1", customer: "C", strategic: false, committed: "2026-12-01", value: 1, penaltyPerDay: 0 };
+  it("air freight needs an AWB, sea a B/L, road into Romania a CMR and UIT", () => {
+    expect(requiredShippingDocs({ ...base, freightMode: "air" })).toContain("awb");
+    expect(requiredShippingDocs({ ...base, freightMode: "sea" })).toContain("bl");
+    expect(requiredShippingDocs({ ...base, freightMode: "road", shipping: { romania: true } })).toEqual(expect.arrayContaining(["cmr", "uit"]));
+  });
+  it("non-EU preferential exports need HS code, MRN and EUR.1", () => {
+    expect(requiredShippingDocs({ ...base, freightMode: "air", shipping: { outsideEu: true, preferential: true } })).toEqual(expect.arrayContaining(["hs_code", "export_mrn", "eur1"]));
+  });
+  it("is ready only when freight is set and every required document has a number", () => {
+    expect(shippingReadiness(base).ready).toBe(false);
+    const refs = { delivery_note: "DN1", packing_list: "PL1", commercial_invoice: "CI1", awb: "176-1" };
+    expect(shippingReadiness({ ...base, freightMode: "air", shipping: { refs } }).ready).toBe(true);
+    expect(shippingReadiness({ ...base, freightMode: "air", status: "cancelled", shipping: { refs } }).ready).toBe(false);
+  });
+  it("maps SAP ECC field names and reads German number format", () => {
+    const m = autoMapping(["MATNR", "EBELN", "LIFNR", "EINDT"]);
+    expect(m).toMatchObject({ partNumber: 0, po: 1, supplier: 2, targetBuild: 3 });
+    expect(isSapLayout(["MATNR", "EBELN"])).toBe(true);
+    expect(sapNumber("1.234,50")).toBe(1234.5);
+    expect(sapNumber("1.234")).toBeUndefined();
+    expect(sapNumber("1,200")).toBeUndefined();
+    expect(sapNumber("12,5")).toBe(12.5);
+  });
+});

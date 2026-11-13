@@ -78,6 +78,40 @@ export interface CustomerOrder {
   so: string; customer: string; strategic: boolean; committed: string; value: number; penaltyPerDay: number;
   tier?: CustomerTier; penaltyGraceDays?: number; otifImpact?: boolean;
   status?: OrderStatus; originalCommitted?: string; freightMode?: FreightMode; transportReference?: string;
+  shipping?: ShippingInfo;
+}
+export interface ShippingInfo { outsideEu?: boolean; preferential?: boolean; romania?: boolean; refs?: Partial<Record<ShippingDoc, string>> }
+export const SHIPPING_DOCS = {
+  delivery_note: { label: "Delivery note", help: "Created by Order Management; tells the warehouse what to pick and pack for this order." },
+  packing_list: { label: "Packing list", help: "Boxes, weights and dimensions; the carrier and customs check it against the goods." },
+  commercial_invoice: { label: "Commercial invoice", help: "Value of the goods; customs use it to calculate duties." },
+  awb: { label: "AWB (Air Waybill)", help: "The air carrier's contract and tracking number for air freight." },
+  cmr: { label: "CMR consignment note", help: "Road transport contract signed by sender, driver and receiver." },
+  bl: { label: "B/L (Bill of Lading)", help: "Sea freight contract and title to the goods; needed to release the container." },
+  uit: { label: "UIT code (RO e-Transport)", help: "Romanian tax authority code required before road goods move into or through Romania." },
+  hs_code: { label: "HS code", help: "Customs classification number of the product; sets duty rates." },
+  export_mrn: { label: "Export declaration (MRN)", help: "Customs reference proving goods were declared for export outside the EU." },
+  eur1: { label: "EUR.1 certificate", help: "Proves EU origin so the customer pays reduced or zero duty under a trade agreement." },
+} as const;
+export type ShippingDoc = keyof typeof SHIPPING_DOCS;
+/** Required outbound documents follow freight mode and destination flags; unspecified freight blocks readiness. */
+export function requiredShippingDocs(o: CustomerOrder): ShippingDoc[] {
+  const s = o.shipping ?? {};
+  const mode = o.freightMode ?? "unspecified";
+  const docs: ShippingDoc[] = ["delivery_note", "packing_list", "commercial_invoice"];
+  if (mode === "air") docs.push("awb");
+  if (mode === "road" || mode === "express") docs.push("cmr");
+  if (mode === "sea") docs.push("bl");
+  if (s.romania && (mode === "road" || mode === "express")) docs.push("uit");
+  if (s.outsideEu) docs.push("hs_code", "export_mrn");
+  if (s.outsideEu && s.preferential) docs.push("eur1");
+  return docs;
+}
+export function shippingReadiness(o: CustomerOrder) {
+  const required = requiredShippingDocs(o);
+  const missing = required.filter((d) => !o.shipping?.refs?.[d]?.trim());
+  const freightSet = (o.freightMode ?? "unspecified") !== "unspecified";
+  return { required, missing, freightSet, ready: freightSet && missing.length === 0 && orderStatus(o) !== "cancelled" };
 }
 export const customerTier = (o: CustomerOrder): CustomerTier => o.tier ?? (o.strategic ? "tier1" : "tier3");
 export const commercialVisibility = (mode: CommercialMode) => ({ tiers: mode !== "penalties", penalties: mode !== "tiers" });

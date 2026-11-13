@@ -22,9 +22,22 @@ export type Mapping = Partial<Record<Field, number | undefined>>;
 export type Grid = { name: string; headers: string[]; rows: string[][] };
 export const MAX_ROWS = 5000;
 const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+/** SAP ECC technical field names and common ALV column titles (MD04, ME2M, ME2N, VA05). */
+export const SAP_ALIASES: Partial<Record<Field, string[]>> = {
+  partNumber: ["MATNR", "Material"], description: ["MAKTX", "TXZ01", "Short text", "Material description"],
+  po: ["EBELN", "Purchasing document", "Purch.doc."], supplier: ["LIFNR", "NAME1", "Vendor", "Supplier name"],
+  targetBuild: ["BDTER", "EINDT", "Requirements date", "Delivery date"], qtyPending: ["WEMNG_OPEN", "Still to be delivered (qty)", "Open quantity", "MENGE"],
+  uom: ["MEINS", "BPRME", "Order unit", "Base unit of measure"], planner: ["DISPO", "MRP controller"], line: ["ARBPL", "Work center"],
+  so: ["VBELN", "Sales document"], customer: ["KUNNR", "Sold-to party", "Customer name"], committed: ["EDATU", "Schedule line date"], orderValue: ["NETWR", "Net value"],
+};
+export function isSapLayout(headers: string[]) {
+  const tech = ["MATNR", "EBELN", "LIFNR", "EINDT", "BDTER", "MEINS", "DISPO", "VBELN", "WERKS"];
+  return headers.filter((h) => tech.includes(h.trim().toUpperCase())).length >= 2;
+}
 export function autoMapping(headers: string[]): Mapping {
   return Object.fromEntries(FIELDS.flatMap(([key, label]) => {
-    const index = headers.findIndex((h) => [normalize(key), normalize(label)].includes(normalize(h)));
+    const names = [key, label, ...(SAP_ALIASES[key] ?? [])].map(normalize);
+    const index = headers.findIndex((h) => names.includes(normalize(h)));
     return index < 0 ? [] : [[key, index]];
   }));
 }
@@ -68,12 +81,19 @@ export async function readReport(file: File): Promise<Grid[]> {
   return grids;
 }
 export const partKey = (p: Pick<Part, "partNumber" | "po" | "line">) => JSON.stringify([p.partNumber, p.po, p.line]);
-function date(value: string) {
+function date(raw: string) {
+  const sap = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(raw);
+  const value = sap ? `${sap[3]}-${sap[2]}-${sap[1]}` : raw;
   if (!/^\d{4}-\d{2}-\d{2}(?:T.*)?$/.test(value)) throw new Error("date must be YYYY-MM-DD");
   const d = value.slice(0, 10);
   const parsed = new Date(`${d}T00:00:00Z`);
   if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== d) throw new Error("invalid calendar date");
   return d;
+}
+/** SAP German-locale numbers (1.234,50 or 12,5); "1,200" stays ambiguous and is rejected; plain dots stay decimal points. */
+export function sapNumber(v: string) {
+  if (!/^\d{1,3}(?:\.\d{3})+,\d+$|^\d+,(?:\d{1,2}|\d{4,})$/.test(v)) return undefined;
+  return Number(v.replace(/\./g, "").replace(",", "."));
 }
 export function validateReport(grid: Grid, mapping: Mapping, existing: Part[], mode: "merge" | "replace") {
   const errors: { row: number; message: string }[] = [];
@@ -94,6 +114,8 @@ export function validateReport(grid: Grid, mapping: Mapping, existing: Part[], m
       }
       const number = (key: Field, fallback = 0, max = Number.MAX_SAFE_INTEGER, integer = false) => {
         if (!get(key)) return fallback;
+        const sapN = sapNumber(get(key));
+        if (sapN !== undefined) { if (sapN > max || (integer && !Number.isInteger(sapN))) throw new Error(`${key}: invalid number or outside allowed range`); return sapN; }
         if (!/^(?:\d+(?:\.\d+)?|\.\d+)$/.test(get(key))) throw new Error(`${key}: use a non-negative number with a decimal point and no thousands separator`);
         const n = Number(get(key));
         if (!Number.isFinite(n) || n > max || (integer && !Number.isInteger(n))) throw new Error(`${key}: invalid number or outside allowed range`);

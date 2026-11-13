@@ -44,3 +44,5 @@ use the editor.
 - The left navigation (app-sidebar.tsx) jumps to sections on the single board page; add real routes only when a section needs its own URL, so the shared board state stays in one place.
 - Visual analytics reads dashboardAnalysis in shortages.ts and uses the whole board for read-only expedite comparisons; filtered charts must not hide other order blockers or invent historical trends.
 - The business vision is the landing page at / and the workspace lives at /demo; /vision redirects to / so earlier shared links keep working. Legal pages (/terms, /privacy) share src/components/legal-page.tsx.
+- Outbound shipping readiness (requiredShippingDocs/shippingReadiness in shortages.ts) derives required documents from freight mode and destination flags and is saved per sales order via updateOrder, so every pegging occurrence stays consistent.
+- SAP ECC import support is header aliases plus DD.MM.YYYY and unambiguous decimal-comma parsing in data-exchange.ts; ambiguous values like "1,200" stay rejected to avoid silent quantity errors.

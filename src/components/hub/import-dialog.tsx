@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Download, FileSpreadsheet, Upload, LoaderCircle, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FIELDS, autoMapping, readReport, validateReport, exportRows, csvContent, downloadBlob, partKey, type Grid, type Mapping } from "@/lib/data-exchange";
+import { FIELDS, autoMapping, isSapLayout, readReport, validateReport, exportRows, csvContent, downloadBlob, partKey, type Grid, type Mapping } from "@/lib/data-exchange";
 import { buildSeed } from "@/lib/shortages";
 import { useHub } from "./store";
 
@@ -53,6 +53,7 @@ export function ImportDialog() {
             <label className="text-xs font-semibold">Worksheet <select aria-label="Worksheet" value={sheet} onChange={(e) => { const n = Number(e.target.value); setSheet(n); setMapping(autoMapping(grids[n]?.headers ?? [])); setConfirmed(false); }} className="ml-2 min-h-11 max-w-full rounded-md border border-input bg-card px-2">{grids.map((g, i) => <option key={i} value={i}>{g.name}</option>)}</select></label>
             <label className="text-xs font-semibold">Import mode <select aria-label="Import mode" value={mode} onChange={(e) => { setMode(e.target.value === "replace" ? "replace" : "merge"); setConfirmed(false); }} className="ml-2 min-h-11 rounded-md border border-input bg-card px-2"><option value="merge">Merge into board</option><option value="replace">Replace entire board</option></select></label>
           </div>
+          {isSapLayout(grid.headers) && <p role="status" className="rounded-md border bg-muted px-3 py-2 text-sm"><strong>SAP ECC layout detected.</strong> Fields like MATNR, EBELN, LIFNR and EINDT were mapped automatically; dates DD.MM.YYYY and decimal commas (1.234,50) are accepted. Apex-only columns (days late, value at risk, hours to line stop, risk score) still need a column.</p>}
           <details className="border-b pb-3" open={result?.errors.some((e) => e.row === 1) || undefined}>
             <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold">Column mapping ({FIELDS.filter(([k, , required]) => required && mapping[k] !== undefined).length} / {FIELDS.filter((f) => f[2]).length} required)</summary>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{FIELDS.map(([key, label, required]) => <label key={key} className="flex min-w-0 flex-col gap-1 text-xs">{label}{required ? " *" : ""}<select aria-label={`Map ${label}`} value={mapping[key] ?? ""} onChange={(e) => { const value = e.target.value; setMapping((m) => ({ ...m, [key]: value === "" ? undefined : Number(value) })); setConfirmed(false); }} className="min-h-11 w-full min-w-0 rounded-md border border-input bg-card px-2"><option value="">{required ? "Select column" : "Not imported"}</option>{grid.headers.map((h, i) => <option value={i} key={i}>{i + 1}. {h || "Unnamed"}</option>)}</select></label>)}</div>
