@@ -18,11 +18,12 @@ export const Route = createFileRoute("/privacy")({
 
 function Privacy() {
   return (
-    <LegalPage title="Privacy Notice" updated="13 November 2026">
+    <LegalPage title="Privacy Notice" updated="14 November 2026">
       <p>This notice explains what personal data Apex Escalation Hub (the “Platform”) processes, why, who receives it and what rights you have. The Owner of the Platform is the data controller. We collect only what the Platform needs to work and we never sell personal data or use it for advertising.</p>
 
       <h2>1. Using the demo without signing in</h2>
       <p>You can use the full demo without an account. In that case your board, settings, dashboard layout, role perspective, commercial mode, shipping readiness choices and menu preference are saved only in your own browser's local storage. They are not sent to our servers. You can delete them at any time with “Reset” in the demo or by clearing this site's data in your browser.</p>
+      <p>Notes & drafts are stored separately in this browser, scoped to your current viewer, and are not shared with teammates or backed up to Cloud. Board reset does not delete them; delete individual notes or clear site data to remove them. Anyone with access to your browser profile may be able to read them. Copying a handover or email puts it on your device clipboard; the Platform does not send it.</p>
 
       <h2>2. Signing in</h2>
       <p>Signing in is optional and only needed for the shared team board. Two methods exist:</p>
@@ -39,7 +40,7 @@ function Privacy() {
       <p>CSV and Excel files are read inside your browser. The files themselves are never uploaded. If you are signed in to the shared board and confirm an import, only the validated rows are saved to the shared board as described above.</p>
 
       <h2>5. AI features</h2>
-      <p>When you use the standup briefing, supplier escalation drafter or inbound update reader, the relevant board details and any text you paste or type (such as a supplier email or sender name) are sent through our server to Groq, Inc., an AI provider, to generate the response. We do not store this content ourselves. Groq processes it under its own terms and may handle it outside the EU. Do not paste personal, confidential or customer data you are not authorised to share.</p>
+      <p>When you use the standup briefing, risk explanation, supplier escalation drafter, inbound update reader, Ask Apex AI or customer reschedule drafter, the relevant board details and any text you paste or type (such as your question, customer-safe reason, proposed dates or sender name) are sent through our server to Groq, Inc., an AI provider. Ask Apex sends the current board summary and selects handbook or board excerpts; customer rescheduling uses a constrained template with your supplied facts. These tools are advisory, cannot change SAP or send emails, and can select irrelevant information. We do not persist these new questions or draft requests to our database; responses are saved in your browser only when you choose Save to notes. Groq processes requests under its own terms and may handle them outside the EU. Do not paste personal, confidential or customer data you are not authorised to share.</p>
 
       <h3>Feedback form</h3>
       <p>If you send feedback from the home page, we store your message, rating, chosen area and, only if you enter it, your email address. We use it solely to improve the Platform and to reply to you. It is never sold or published. You can ask for it to be deleted at any time.</p>

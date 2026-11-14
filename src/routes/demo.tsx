@@ -23,6 +23,10 @@ import { Improvement } from "@/components/hub/improvement";
 import { StandupMode } from "@/components/hub/standup-mode";
 import { BaselineReset } from "@/components/hub/baseline-reset";
 import { ArchitectureDrawer } from "@/components/hub/architecture-drawer";
+import { WorkspaceNotes } from "@/components/hub/workspace-notes";
+import { ApexCopilot } from "@/components/hub/apex-copilot";
+import { Scratchpad } from "@/components/hub/scratchpad";
+import { CustomerReschedule } from "@/components/hub/customer-reschedule";
 
 export const Route = createFileRoute("/demo")({
   staticData: { sitemap: true },
@@ -38,7 +42,7 @@ export const Route = createFileRoute("/demo")({
   }),
   component: () => (
     <HubProvider>
-      <Hub />
+      <WorkspaceNotes><Hub /></WorkspaceNotes>
       <Toaster />
     </HubProvider>
   ),
@@ -135,6 +139,9 @@ function Hub() {
               </select>
             </label>
             <BriefingDialog />
+            <ApexCopilot />
+            <Scratchpad />
+            <CustomerReschedule />
             <ExportDialog shown={shown} />
             <InboundParserDialog />
             <div role="group" aria-label="Row density" className="inline-flex rounded-md border bg-card p-0.5">
