@@ -15,7 +15,7 @@ export interface GroundSource { id: string; title: string; text: string }
 export function selectedSources(ids: string[], sources: GroundSource[]) {
   return [...new Set(ids)].flatMap((id) => { const source = sources.find((s) => s.id === id); return source ? [source] : []; }).slice(0, 5);
 }
-interface ConflictPart { partNumber: string; stage: string; riskScore: number; hoursToLineStop: number; daysLate: number; customerOrders?: { so: string; customer: string; committed: string }[] }
+interface ConflictPart { partNumber: string; stage: string; riskScore: number; hoursToLineStop: number; daysLate: number; customerOrders?: { so: string; customer: string; committed: string }[] | undefined }
 /** Deterministic check: board rows that disagree about a part or sales order named in the question. */
 export function boardConflicts(question: string, parts: ConflictPart[]): string[] {
   const q = question.toUpperCase();
