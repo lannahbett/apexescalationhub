@@ -15,3 +15,22 @@ export interface GroundSource { id: string; title: string; text: string }
 export function selectedSources(ids: string[], sources: GroundSource[]) {
   return [...new Set(ids)].flatMap((id) => { const source = sources.find((s) => s.id === id); return source ? [source] : []; }).slice(0, 5);
 }
+interface ConflictPart { partNumber: string; stage: string; riskScore: number; hoursToLineStop: number; daysLate: number; customerOrders?: { so: string; customer: string; committed: string }[] }
+/** Deterministic check: board rows that disagree about a part or sales order named in the question. */
+export function boardConflicts(question: string, parts: ConflictPart[]): string[] {
+  const q = question.toUpperCase();
+  const out: string[] = [];
+  const parts_ = new Map<string, Set<string>>();
+  const orders = new Map<string, Set<string>>();
+  for (const p of parts) {
+    if (q.includes(p.partNumber.toUpperCase())) (parts_.get(p.partNumber) ?? parts_.set(p.partNumber, new Set()).get(p.partNumber)!).add(`stage ${p.stage}, risk ${p.riskScore}, ${p.hoursToLineStop}h to line stop, ${p.daysLate} days late`);
+    for (const o of p.customerOrders ?? []) if (q.includes(o.so.toUpperCase())) (orders.get(o.so) ?? orders.set(o.so, new Set()).get(o.so)!).add(`${o.customer}, commitment ${o.committed}`);
+  }
+  for (const [k, v] of [...parts_, ...orders]) if (v.size > 1) out.push(`${k} has conflicting board records: ${[...v].join(" | ")}. Confirm the correct record before acting.`);
+  return out;
+}
+
+/** Questions that try to steer the assistant instead of asking for information get an explicit unknown. */
+export function isSteeringAttempt(question: string) {
+  return /\b(ignore|disregard|forget|override)\b.{0,40}\b(instructions?|rules?|prompt|sources?)\b|\bsystem prompt\b|\b(pretend|act as|roleplay)\b|\b(say|tell me|confirm|state) (that )?(every|all|everything)\b/i.test(question);
+}
