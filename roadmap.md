@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Phase 6/7 recheck: desktop/phone sourcing persistence, projection data (18h stockout / 34h ETA / 16h gap), all five line counts, three-minute sequencing, unsaved-note pause, saved actions, cancel/confirmed baseline reset; fixed overlapping chart labels and guarded store.reset; 81 tests pass; simulated shared-board identity transition retains custom data with zero writes
+- [ ] Real-account shared-board browser verification: no matching account session could be minted; requires the user to sign in through the preview
 - [x] Phase 6: qualified sourcing requests, explicit stock / consumption / ETA projections, and assembly-line slicing; private demo request persistence verified; no external purchasing or inventory movements
 - [x] Phase 7: top-five standup presentation, optional three-minute sequencing, saved action notes, private demo baseline reset, and architecture drawer; desktop/phone demo verified; shared-team round-trip unverified
 - [x] Lead-time drift quick filter (+50% and above), tested threshold and search

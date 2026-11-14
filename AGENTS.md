@@ -53,4 +53,4 @@ use the editor.
 - Continuous-improvement analytics use recorded recoveries and recorded initial/reopened escalation timestamps only; costs are actual user entries, not projected penalties, and legacy delivered parts have no inferred cause.
 - Plant triage records qualified sourcing requests inside part JSON without modifying primary POs or inventory; stock projections require explicit timestamped snapshots and constant daily consumption, never inferred stock from shortage quantities.
 - Standup sessions freeze the top-five open-part IDs for the selected assembly line, use a three-minute optional timer, and pause sequencing for unsaved notes; saved actions use the existing part timeline persistence.
-- Portfolio baseline reset is available only on a private local board, with confirmation, so it cannot replace shared team data.
+- Portfolio baseline reset is available only on a private local board, with confirmation; store.reset must also reject pending identity, a resolved viewer, a cloud client or non-local sync so a stale dialog cannot replace shared team data.

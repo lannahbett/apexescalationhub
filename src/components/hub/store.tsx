@@ -213,9 +213,11 @@ export function HubProvider({ children }: { children: ReactNode }) {
     return result.parts.length;
   };
   const reset = () => {
+    // Protect the mutation itself, including a dialog opened before identity resolves.
+    if (viewerQ.isPending || viewer || db.current || sync !== "local") return;
     setParts(buildSeed());
+    setRecoveryId(null);
     setAnnounce("Sample data restored");
-    logActivity("Restored the sample data on the shared board.");
   };
   const loadSampleIntoCloud = async () => {
     if (!db.current) return;
