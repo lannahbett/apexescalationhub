@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Phase 6: qualified sourcing requests, explicit stock / consumption / ETA projections, and assembly-line slicing; private demo request persistence verified; no external purchasing or inventory movements
+- [x] Phase 7: top-five standup presentation, optional three-minute sequencing, saved action notes, private demo baseline reset, and architecture drawer; desktop/phone demo verified; shared-team round-trip unverified
 - [x] Lead-time drift quick filter (+50% and above), tested threshold and search
 - [x] Phase 5: confirmed recovery, root-cause / 5-Why / actual cost records, CAPA ownership and status, configurable improvement widget, Pareto and 30-day repeat-escalation analysis; demo recovery and closed CAPA verified after reload; existing part JSON sync reused, authenticated cloud round-trip unverified
 - [x] SEO failures: descriptive homepage/demo headings, verified distinct social previews on all content pages, router-derived sitemap and robots reference; 64 tests pass, publish and rescan pending

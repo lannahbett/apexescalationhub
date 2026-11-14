@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { STAGES, activeOrders, eur, orderExposure, type Part, type Stage } from "@/lib/shortages";
 import { ConfidencePill, DemandChip, LeadTimeChip, LineStop, PlannerBadge, RiskPill, StageBadge } from "./badges";
 import { useHub } from "./store";
+import { StockProjection } from "./stock-projection";
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 
@@ -151,6 +152,7 @@ export function KanbanBoard({ parts, onOpen }: { parts: Part[]; onOpen: (id: str
                     <DemandChip demand={p.demand} />
                   </div>
                   </Button>
+                   <div className="mt-2"><StockProjection part={p} compact /></div>
                   <StageSelect part={p} className="mt-2 w-full" />
                 </div>
               ))}

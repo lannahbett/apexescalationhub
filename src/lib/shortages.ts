@@ -51,7 +51,43 @@ export interface Part {
   inboundFreight?: FreightMode;
   inboundReference?: string;
   recoveries?: RecoveryRecord[];
+  stock?: StockSnapshot;
+  sourcingOptions?: SourcingOption[];
+  sourcingRequests?: SourcingRequest[];
 }
+
+export interface StockSnapshot { asOf: string; onHand: number; dailyUsage: number; eta: string; inboundQty: number }
+export interface SourcingOption { id: string; kind: "transfer" | "second_source"; partNumber: string; location: string; available: number; leadHours: number; qualified: boolean; approvalRef: string }
+export interface SourcingRequest { optionId: string; at: string; by: string; status: "requested" }
+export function canRequestSource(p: Part, o: SourcingOption) {
+  return p.stage !== "delivered" && o.qualified && !!o.approvalRef.trim() && Number.isFinite(o.available) && o.available > 0 &&
+    Number.isFinite(o.leadHours) && o.leadHours >= 0 && !(p.sourcingRequests ?? []).some((r) => r.optionId === o.id);
+}
+/** Request only: never changes a supplier PO, reserves stock, or assumes receipt. */
+export function requestSource(p: Part, optionId: string, at: string, by: string): Part | null {
+  const option = p.sourcingOptions?.find((o) => o.id === optionId);
+  if (!option || !canRequestSource(p, option) || !Number.isFinite(Date.parse(at))) return null;
+  return { ...p, sourcingRequests: [...(p.sourcingRequests ?? []), { optionId, at, by, status: "requested" }] };
+}
+/** Constant daily usage, 24-hour day, eight-hour chart intervals; inbound is not available until ETA. */
+export function stockProjection(s?: StockSnapshot) {
+  if (!s || ![s.onHand, s.dailyUsage, s.inboundQty].every((n) => Number.isFinite(n) && n >= 0) || s.dailyUsage === 0) return null;
+  const start = Date.parse(s.asOf), eta = Date.parse(s.eta);
+  if (!Number.isFinite(start) || !Number.isFinite(eta) || eta < start) return null;
+  const etaHours = (eta - start) / 3600000;
+  const stockoutHours = s.onHand / s.dailyUsage * 24;
+  const horizon = Math.min(240, Math.max(48, etaHours + 8, stockoutHours + 8));
+  const times = [...new Set([0, ...Array.from({ length: Math.floor(horizon / 8) }, (_, i) => (i + 1) * 8), horizon,
+    ...(etaHours <= horizon ? [etaHours] : []), ...(stockoutHours <= horizon ? [stockoutHours] : [])])].sort((a, b) => a - b);
+  const quantity = (h: number) => Math.max(0, s.onHand - Math.min(h, etaHours) * s.dailyUsage / 24) + (h >= etaHours ? s.inboundQty : 0) - Math.max(0, h - etaHours) * s.dailyUsage / 24;
+  return { etaHours, stockoutHours, gapHours: s.inboundQty > 0 ? Math.max(0, etaHours - stockoutHours) : null,
+    points: times.flatMap((hour) => hour === etaHours && s.inboundQty > 0 ? [
+      { hour, qty: Math.max(0, s.onHand - hour * s.dailyUsage / 24) }, { hour, qty: Math.max(0, quantity(hour)) },
+    ] : [{ hour, qty: Math.max(0, quantity(hour)) }]) };
+}
+export const STANDUP_SECONDS = 180;
+export function standupParts(parts: Part[]) { return parts.filter((p) => p.stage !== "delivered").sort((a, b) => b.riskScore - a.riskScore || a.id.localeCompare(b.id)).slice(0, 5); }
+export function sliceLines(parts: Part[], line: string) { return line === "all" ? parts : parts.filter((p) => p.line === line); }
 
 export const ROOT_CAUSES = {
   tier2: "Tier-2 / raw material shortage",
@@ -316,6 +352,11 @@ export function buildSeed(): Part[] {
       id: `p${i + 1}`,
       targetBuild: day(buildIn),
       ...seedSignals(i, s),
+      stock: { asOf: new Date().toISOString(), onHand: Math.round((40 + i * 8) * s.hoursToLineStop / 24), dailyUsage: 40 + i * 8, eta: new Date(Date.now() + (s.hoursToLineStop + 16) * 3600000).toISOString(), inboundQty: s.qtyPending },
+      sourcingOptions: [
+        { id: "sister", kind: "transfer", partNumber: s.partNumber, location: i % 2 ? "Plant Leipzig" : "Plant Győr", available: Math.max(1, Math.round(s.qtyPending * 0.6)), leadHours: 12 + i * 2, qualified: true, approvalRef: "DEMO-QA-01" },
+        { id: "alternate", kind: "second_source", partNumber: `${s.partNumber}-ALT`, location: "Demo qualified second source", available: s.qtyPending, leadHours: 36 + i * 2, qualified: true, approvalRef: "DEMO-ENG-02" },
+      ],
       timeline: timeline.reverse(),
       checklist: defaultChecklist().map((c) => ({ ...c, done: done.includes(c.id) })),
     };

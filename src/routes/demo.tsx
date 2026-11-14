@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Kanban, Rows3, Rows4, RotateCcw, Search, Table2, X } from "lucide-react";
+import { Kanban, Rows3, Rows4, Search, Table2, X } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ROLE_VIEWS, COMMERCIAL_MODES, FILTERS, filterParts, type FilterId } from "@/lib/shortages";
+import { ROLE_VIEWS, COMMERCIAL_MODES, FILTERS, filterParts, sliceLines, type FilterId } from "@/lib/shortages";
 import { HubProvider, useHub } from "@/components/hub/store";
 import { KanbanBoard, ShortageTable, type Density } from "@/components/hub/board";
 import { RoleBoard } from "@/components/hub/role-board";
@@ -20,6 +20,9 @@ import { ConnectorsHub } from "@/components/hub/connectors-hub";
 import { ModularDashboard } from "@/components/hub/modular-dashboard";
 import { ActivityFeed, SharedBoardEmpty, SharedBoardStatus } from "@/components/hub/shared-board";
 import { Improvement } from "@/components/hub/improvement";
+import { StandupMode } from "@/components/hub/standup-mode";
+import { BaselineReset } from "@/components/hub/baseline-reset";
+import { ArchitectureDrawer } from "@/components/hub/architecture-drawer";
 
 export const Route = createFileRoute("/demo")({
   staticData: { sitemap: true },
@@ -42,8 +45,9 @@ export const Route = createFileRoute("/demo")({
 });
 
 function Hub() {
-  const { parts, reset, commercialMode, setCommercialMode, roleView, setRoleView } = useHub();
+  const { parts, commercialMode, setCommercialMode, roleView, setRoleView } = useHub();
   const [q, setQ] = useState("");
+  const [line, setLine] = useState("all");
   const [filter, setFilter] = useState<FilterId>("all");
   const [view, setView] = useState<"table" | "kanban">("table");
   const [open, setOpen] = useState<string | null>(null);
@@ -51,11 +55,12 @@ function Hub() {
   const [dashboardFocus, setDashboardFocus] = useState<{ ids: string[]; label: string } | null>(null);
   useEffect(() => { const d = localStorage.getItem("apex-density"); if (d === "compact") setDensity("compact"); }, []);
   const changeDensity = (d: Density) => { setDensity(d); localStorage.setItem("apex-density", d); };
-  const shown = useMemo(() => filterParts(parts, filter, q).filter((p) => !dashboardFocus || dashboardFocus.ids.includes(p.id)), [parts, filter, q, dashboardFocus]);
-  const counts = useMemo(() => Object.fromEntries(FILTERS.map((f) => [f.id, filterParts(parts, f.id, "").length])), [parts]);
+  const lineParts = useMemo(() => sliceLines(parts, line), [parts, line]);
+  const shown = useMemo(() => filterParts(lineParts, filter, q).filter((p) => !dashboardFocus || dashboardFocus.ids.includes(p.id)), [lineParts, filter, q, dashboardFocus]);
+  const counts = useMemo(() => Object.fromEntries(FILTERS.map((f) => [f.id, filterParts(lineParts, f.id, "").length])), [lineParts]);
 
   return (
-    <div className="flex min-h-dvh w-full">
+    <div className="flex min-h-dvh w-full overflow-x-clip">
       <AppSidebar />
       <div className="min-w-0 flex-1">
       <a href="#board" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-card focus:px-3 focus:py-2 focus:text-xs">Skip to shortage board</a>
@@ -88,10 +93,18 @@ function Hub() {
         <ActivityFeed />
          <div id="dashboard" tabIndex={-1}><ModularDashboard onOpen={setOpen} onFocus={(ids, label) => {
            setQ(""); setFilter("all"); setDashboardFocus({ ids, label });
-           requestAnimationFrame(() => { document.getElementById("board")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); document.getElementById("board")?.focus({ preventScroll: true }); });
+           setLine("all"); requestAnimationFrame(() => { document.getElementById("board")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); document.getElementById("board")?.focus({ preventScroll: true }); });
          }} /></div>
 
          <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-5"><h2 className="text-lg font-semibold">Shortage board <span className="font-mono text-xs font-normal text-muted-foreground">{shown.length} parts</span></h2>{dashboardFocus && <div role="status" className="flex min-w-0 items-center gap-2 text-xs text-info"><span className="min-w-0 break-words">{dashboardFocus.label}</span><Button variant="ghost" size="icon" title="Clear dashboard focus" aria-label="Clear dashboard focus" onClick={() => setDashboardFocus(null)}><X /></Button></div>}</div>
+         <div className="flex flex-wrap items-center gap-2">
+           <label className="flex min-w-0 flex-wrap items-center gap-2 text-xs font-semibold">Assembly line
+             <select aria-label="Assembly line" value={line} onChange={(e) => { setLine(e.target.value); setDashboardFocus(null); }} className="h-11 max-w-full rounded-md border border-input bg-card px-3"><option value="all">All assembly lines</option>{[...new Set(parts.map((p) => p.line))].sort().map((name) => <option key={name} value={name}>{name}</option>)}</select>
+           </label>
+           <StandupMode parts={lineParts} />
+           <BaselineReset onReset={() => { setQ(""); setFilter("all"); setLine("all"); setDashboardFocus(null); setOpen(null); }} />
+           <ArchitectureDrawer />
+         </div>
 
         <section aria-label="Board filters and view" className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-2 md:flex-row md:items-center">
@@ -124,7 +137,6 @@ function Hub() {
             <BriefingDialog />
             <ExportDialog shown={shown} />
             <InboundParserDialog />
-            <Button size="icon" variant="ghost" onClick={reset} title="Reset sample data" aria-label="Reset sample data"><RotateCcw aria-hidden className="size-3.5" /></Button>
             <div role="group" aria-label="Row density" className="inline-flex rounded-md border bg-card p-0.5">
               {([["standard", Rows3, "Standard"], ["compact", Rows4, "Compact"]] as const).map(([id, Icon, label]) => (
                 <Button variant="ghost" type="button" key={id} aria-pressed={density === id} onClick={() => changeDensity(id)} title={`${label} rows`}
@@ -149,7 +161,7 @@ function Hub() {
           {view === "table" ? roleView === "planner" ? <ShortageTable parts={shown} onOpen={setOpen} density={density} /> : <RoleBoard parts={shown} onOpen={setOpen} density={density} /> : <KanbanBoard parts={shown} onOpen={setOpen} />}
         </section>
         <ShippingGate />
-        <Improvement onFocus={(ids, label) => { setQ(""); setFilter("all"); setDashboardFocus({ ids, label }); requestAnimationFrame(() => { document.getElementById("board")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }); document.getElementById("board")?.focus({ preventScroll: true }); }); }} />
+         <Improvement onFocus={(ids, label) => { setQ(""); setFilter("all"); setLine("all"); setDashboardFocus({ ids, label }); requestAnimationFrame(() => { document.getElementById("board")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }); document.getElementById("board")?.focus({ preventScroll: true }); }); }} />
         <ConnectorsHub />
       </main>
       <PartSheet partId={open} onClose={() => setOpen(null)} />

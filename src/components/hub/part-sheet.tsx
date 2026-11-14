@@ -19,6 +19,7 @@ import { RiskExplainer } from "./risk-explainer";
 import { useHub } from "./store";
 import { FreightAndExpedite } from "./order-operations";
 import { CommercialOrders } from "./commercial-orders";
+import { PlantTriage } from "./plant-triage";
 
 const kindIcon: Record<TimelineEntry["kind"], typeof Mail> = {
   date: CalendarClock, contact: Phone, note: MessageSquare, confidence: ShieldCheck, stage: Workflow, checklist: ListChecks,
@@ -63,6 +64,7 @@ export function PartSheet({ partId, onClose }: { partId: string | null; onClose:
               </div>
 
               <CommercialOrders part={part} />
+              <PlantTriage part={part} />
               <FreightAndExpedite key={part.id} part={part} />
 
               {(part.demand || part.leadTime) && (

@@ -169,3 +169,23 @@
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   }
 }
+
+.standup-panel {
+  width: min(1200px, calc(100vw - 2rem));
+  max-width: none;
+  aspect-ratio: 16 / 9;
+  max-height: calc(100dvh - 2rem);
+}
+.standup-panel:fullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-height: none;
+  transform: none;
+  border-radius: 0;
+  overflow-y: auto;
+}
+@media (max-width: 767px) {
+  .standup-panel { aspect-ratio: auto; }
+}
