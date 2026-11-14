@@ -1,6 +1,6 @@
 # Roadmap
 - [x] Dynamic whole-board navigation counts for critical parts, total parts, unique shipping-blocked orders and open recovery follow-ups; desktop/phone menu verified, recovery updates persist after reload; 84 tests passed, preview build OK.
-- [ ] Verify signed-in sourcing and recovery persistence plus shared reset protection; session mint failed because there are no app auth users, so preview sign-in is required.
+- [ ] Verify signed-in sourcing and recovery persistence plus shared reset protection without modifying existing team records; latest browser check on /demo shows a private board and working Google sign-in at /auth, but no app account session can be minted. Paused for preview sign-in; no shared records changed.
 - [x] Phase 6/7 recheck: desktop/phone sourcing persistence, projection data (18h stockout / 34h ETA / 16h gap), all five line counts, three-minute sequencing, unsaved-note pause, saved actions, cancel/confirmed baseline reset; fixed overlapping chart labels and guarded store.reset; 81 tests pass; simulated shared-board identity transition retains custom data with zero writes
 - [ ] Real-account shared-board browser verification: no matching account session could be minted; requires the user to sign in through the preview
 - [x] Phase 6: qualified sourcing requests, explicit stock / consumption / ETA projections, and assembly-line slicing; private demo request persistence verified; no external purchasing or inventory movements
