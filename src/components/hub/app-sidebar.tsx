@@ -19,6 +19,7 @@ import { ApexLogo } from "@/components/brand/apex-logo";
 import { initials } from "@/lib/shortages";
 import { useHub } from "./store";
 import { cn } from "@/lib/utils";
+import { navigationMetrics } from "@/lib/navigation-metrics";
 
 const NAV = [
   { id: "dashboard", label: "Today’s priorities", icon: LayoutDashboard },
@@ -43,15 +44,21 @@ function go(id: string) {
 
 function NavList({ collapsed, onPick }: { collapsed: boolean; onPick?: () => void }) {
   const [active, setActive] = useState<string>("dashboard");
+  const { parts, sync } = useHub();
+  const metrics = navigationMetrics(parts);
+  const pending = sync === "checking" || sync === "connecting";
   return (
     <ul className="space-y-1">
-      {NAV.map(({ id, label, icon: Icon }) => (
+      {NAV.map(({ id, label, icon: Icon }) => {
+        const metric = id in metrics ? metrics[id as keyof typeof metrics] : undefined;
+        const description = metric ? `${label}, ${pending ? "loading" : `${metric.count} ${metric.unit}`}` : label;
+        return (
         <li key={id}>
           <Button
             variant="ghost"
             type="button"
-            title={collapsed ? label : undefined}
-            aria-label={collapsed ? label : undefined}
+            title={description}
+            aria-label={description}
             aria-current={active === id ? "location" : undefined}
             onClick={() => {
               setActive(id);
@@ -65,10 +72,11 @@ function NavList({ collapsed, onPick }: { collapsed: boolean; onPick?: () => voi
             )}
           >
             <Icon aria-hidden className="size-4 shrink-0" />
-            {!collapsed && <span className="truncate">{label}</span>}
+            {!collapsed && <span className="min-w-0 flex-1 whitespace-normal text-left">{label}</span>}
+            {!collapsed && metric && <span aria-hidden className="grid h-6 min-w-6 shrink-0 place-items-center rounded bg-sidebar-accent px-1 font-mono text-xs tabular-nums">{pending ? "…" : metric.count}</span>}
           </Button>
         </li>
-      ))}
+      ); })}
       <li className="mt-4 border-t border-sidebar-border pt-4">
         <Button
           asChild
