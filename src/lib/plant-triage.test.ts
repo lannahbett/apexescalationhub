@@ -33,5 +33,5 @@ describe("plant triage", () => {
 describe("standup baseline", () => {
   it("selects the five highest-risk open parts", () => { expect(standupParts(buildSeed()).map((p) => p.riskScore)).toEqual([96, 91, 88, 84, 79]); });
   it("uses three minutes per part", () => { expect(STANDUP_SECONDS).toBe(180); });
-  it("restores 14 clean sample parts", () => { expect(buildSeed()).toHaveLength(14); expect(buildSeed().every((p) => !p.sourcingRequests?.length && !p.recoveries?.length)).toBe(true); });
+  it("restores 14 sample parts with three baseline recoveries and no sourcing requests", () => { expect(buildSeed()).toHaveLength(14); expect(buildSeed().every((p) => !p.sourcingRequests?.length)).toBe(true); expect(buildSeed().flatMap((p) => p.recoveries ?? [])).toHaveLength(3); });
 });

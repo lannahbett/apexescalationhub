@@ -338,8 +338,8 @@ export function seedSignals(i: number, s: { daysLate: number; valueAtRisk: numbe
   return { orders, demand, leadTime };
 }
 
-export function buildSeed(): Part[] {
-  return seeds.map((s, i) => {
+export function buildSeed({ improvementExamples = true }: { improvementExamples?: boolean } = {}): Part[] {
+  const parts: Part[] = seeds.map((s, i): Part => {
     const { buildIn, done = [], ...rest } = s;
     const timeline: TimelineEntry[] = [
       { at: day(-s.daysLate - 4, 8), kind: "note", text: `Shortage flagged by MRP run: ${s.qtyPending} ${s.uom} uncovered against ${s.po}.`, by: "ERP Sync" },
@@ -361,6 +361,27 @@ export function buildSeed(): Part[] {
       checklist: defaultChecklist().map((c) => ({ ...c, done: done.includes(c.id) })),
     };
   });
+  if (!improvementExamples) return parts;
+  // Explicit fictional history, never inferred from the delivered stage or backfilled into saved boards.
+  const relay = parts.find((p) => p.partNumber === "PN-3390-RL");
+  const coupler = parts.find((p) => p.partNumber === "PN-6650-IO");
+  if (relay) {
+    relay.recoveries = [
+      { id: "demo-recovery-tier2", recoveredAt: day(-18, 15), by: "Demo planner", cause: "tier2", why: "Fictional example: a Tier-2 resin shortage interrupted relay housing supply; no buffer was agreed.", cost: 1650, owner: "Anika T.", reference: "DEMO-CAPA-083", action: "Agree a critical-material buffer with the Tier-2 supplier.", status: "open", supplier: relay.supplier, partNumber: relay.partNumber },
+      { id: "demo-recovery-breakdown", recoveredAt: day(-3, 15), by: "Demo planner", cause: "breakdown", why: "Fictional example: CNC spindle failure at the Modena plant; no secondary tooling was allocated.", cost: 3200, owner: "Anika T.", reference: "DEMO-8D-084", action: "Validate backup tooling at the sister plant before the next production run.", status: "in_progress", supplier: relay.supplier, partNumber: relay.partNumber },
+    ];
+    relay.timeline = [
+      { at: day(-3, 15), kind: "stage", text: "Recovery confirmed: breakdown. Fictional demo history; delivered after dedicated road transport.", by: "Demo planner" },
+      { at: day(-12, 8), kind: "stage", text: "Escalation reopened: Supplier tooling failure. Fictional demo history.", by: "Demo planner" },
+      { at: day(-18, 15), kind: "stage", text: "Recovery confirmed: tier2. Fictional demo history; supply restored after express air freight.", by: "Demo planner" },
+      { at: day(-22, 8), kind: "note", text: `Shortage flagged by MRP run: ${relay.qtyPending} ${relay.uom} uncovered. Fictional demo history.`, by: "Demo ERP" },
+    ];
+  }
+  if (coupler) {
+    coupler.recoveries = [{ id: "demo-recovery-customs", recoveredAt: day(-2, 15), by: "Demo planner", cause: "customs", why: "Fictional example: missing preferential-origin documentation delayed border clearance.", cost: 850, owner: "Marco R.", reference: "DEMO-CAPA-412", action: "Add a pre-departure origin-document audit to the shipping checklist.", status: "closed", supplier: coupler.supplier, partNumber: coupler.partNumber }];
+    coupler.timeline = [{ at: day(-2, 15), kind: "stage", text: "Recovery confirmed: customs. Fictional demo history; clearance and terminal costs recorded.", by: "Demo planner" }, ...coupler.timeline];
+  }
+  return parts;
 }
 
 export type FilterId = "all" | "critical" | "stalled" | "mine" | "due48" | "demand" | "leadtime";

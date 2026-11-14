@@ -26,8 +26,24 @@ describe("recovery records", () => {
     expect(validRecovery({ ...recovery, status: "closed", owner: "" })).toBe(false);
     expect(validRecovery({ ...recovery, status: "closed", action: "" })).toBe(false);
   });
-  it("does not fabricate recovery history for already delivered seed parts", () => {
-    expect(improvementAnalysis(buildSeed()).records).toEqual([]);
+  it("does not infer history for legacy delivered parts without explicit records", () => {
+    expect(improvementAnalysis(buildSeed({ improvementExamples: false })).records).toEqual([]);
+  });
+  it("includes three valid fictional recoveries and the specified costs and follow-ups", () => {
+    const data = improvementAnalysis(buildSeed());
+    expect(data.records).toHaveLength(3);
+    expect(data.records.every(validRecovery)).toBe(true);
+    expect(data.records.map((r) => r.cost).sort((a, b) => (a ?? 0) - (b ?? 0))).toEqual([850, 1650, 3200]);
+    expect(data.totalCost).toBe(5700);
+    expect(data.openActions).toBe(2);
+    expect(data.pareto.map((r) => [r.cause, r.count, r.cumulativePct])).toEqual([["tier2", 1, 33], ["breakdown", 1, 67], ["customs", 1, 100]]);
+  });
+  it("counts Vectra's three explicit starts in 30 days and keeps the relay delivered", () => {
+    const parts = buildSeed();
+    const data = improvementAnalysis(parts);
+    expect(data.suppliers).toEqual([{ name: "Vectra Automation SpA", count: 3, ids: ["p4", "p11"] }]);
+    expect(parts.find((p) => p.id === "p11")?.stage).toBe("delivered");
+    expect(improvementAnalysis(parts, Date.now() + 31 * 86400000).suppliers).toEqual([]);
   });
   it("counts recovery episodes, cumulative Pareto and actual costs without commercial exposure", () => {
     const part = { ...first, recoveries: [recovery, { ...recovery, id: "r2", cost: null }, { ...recovery, id: "r3", cause: "planning" as const, cost: 300, status: "closed" as const }] };

@@ -26,7 +26,7 @@ describe("whole-board navigation metrics", () => {
     expect(navigationMetrics(parts).shipping.count).toBe(0);
   });
   it("counts only recorded nonclosed follow-ups and updates after closure", () => {
-    const parts = buildSeed();
+    const parts = buildSeed({ improvementExamples: false });
     const first = parts[0];
     if (!first) throw new Error("Missing seed part");
     expect(navigationMetrics(parts).improvement.count).toBe(0);
