@@ -10,3 +10,24 @@ export type RescheduleInput = z.infer<typeof rescheduleSchema>;
 export function customerEmail(d: RescheduleInput, opening: "standard" | "collaborative" = "standard") {
   return `Subject: Request to ${d.direction === "pull_in" ? "pull in" : "push out"} delivery | ${d.so}\n\nDear ${d.customer},\n\n${opening === "collaborative" ? "We would like to coordinate a proposed delivery-date change with you." : "We are requesting your agreement to a proposed delivery-date change."}\n\nSales order: ${d.so}${d.customerPo ? `\nCustomer PO: ${d.customerPo}` : ""}${d.part ? `\nRelated material: ${d.part}` : ""}\nCurrent committed delivery: ${d.committed}\nProposed delivery: ${d.proposed}${d.firstDate ? `\nProposed First Date (subject to SAP field confirmation): ${d.firstDate}` : ""}${d.plannedGi ? `\nProposed planned GI: ${d.plannedGi}` : ""}\n\nReason provided by Order Management: ${d.reason}\n\nPlease confirm whether you can accept this proposal, or advise an alternative date. This request does not confirm a new commitment. Any SAP schedule updates remain subject to approval and internal verification.\n\nKind regards,\n${d.sender}`;
 }
+// Customer reschedule approval tracker: records planner-entered responses and manual SAP follow-ups only.
+export const RESPONSES = { awaiting: "Awaiting customer", accepted: "Accepted as proposed", alternative: "Customer proposed another date", declined: "Declined" } as const;
+export const SAP_FIELDS = { delivery: "Delivery date", firstDate: "First Date", plannedGi: "Planned GI" } as const;
+export type SapField = keyof typeof SAP_FIELDS;
+const optDate = z.union([date, z.literal("")]);
+export const trackedSchema = z.object({
+  id: z.string().max(100), so: z.string().min(1).max(80), customer: z.string().min(1).max(120), direction: z.enum(["pull_in", "push_out"]),
+  committed: date, proposed: date, firstDate: optDate, plannedGi: optDate,
+  response: z.enum(["awaiting", "accepted", "alternative", "declined"]), alternativeDate: optDate, responseNote: z.string().max(1000),
+  sapDone: z.array(z.enum(["delivery", "firstDate", "plannedGi"])).max(3), createdAt: z.iso.datetime(), updatedAt: z.iso.datetime(),
+}).refine((r) => r.response !== "alternative" || r.alternativeDate !== "", "Enter the customer's alternative date");
+export type TrackedReschedule = z.infer<typeof trackedSchema>;
+export function readTracked(raw: string | null): TrackedReschedule[] { try { const p = z.array(trackedSchema).max(200).safeParse(JSON.parse(raw ?? "[]")); return p.success ? p.data : []; } catch { return []; } }
+/** Date the customer agreed to, or null while no agreement is recorded. */
+export function agreedDate(r: Pick<TrackedReschedule, "response" | "proposed" | "alternativeDate">) { return r.response === "accepted" ? r.proposed : r.response === "alternative" ? r.alternativeDate || null : null; }
+/** Fields someone must still update by hand in SAP. Nothing is pending before the customer agrees. */
+export function requiredSapFields(r: Pick<TrackedReschedule, "response" | "firstDate" | "plannedGi">): SapField[] {
+  if (r.response !== "accepted" && r.response !== "alternative") return [];
+  return ["delivery", ...(r.firstDate ? ["firstDate" as const] : []), ...(r.plannedGi ? ["plannedGi" as const] : [])];
+}
+export function pendingSapFields(r: TrackedReschedule): SapField[] { return requiredSapFields(r).filter((f) => !r.sapDone.includes(f)); }

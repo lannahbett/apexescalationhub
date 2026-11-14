@@ -12,7 +12,7 @@ import { useHub } from "./store";
 import { useWorkNotes } from "./workspace-notes";
 
 export function CustomerReschedule() {
-  const { parts, actor } = useHub(); const { ready, save } = useWorkNotes();
+  const { parts, actor } = useHub(); const { ready, save, track } = useWorkNotes();
   const orders = [...new Map(parts.flatMap((p) => (p.orders ?? []).filter((o) => o.status !== "cancelled").map((o) => [o.so, o] as const))).values()];
   const [so, setSo] = useState(""); const order = orders.find((o) => o.so === so);
   const [direction, setDirection] = useState<RescheduleInput["direction"]>("push_out");
@@ -37,6 +37,6 @@ export function CustomerReschedule() {
       {error && <p role="alert" className="text-sm text-critical">{error}</p>}
       {text && <div className="space-y-3"><label className="block text-xs">Editable email draft<Textarea aria-label="Customer email draft" className="min-h-64" maxLength={12000} value={text} onChange={(e) => { setText(e.target.value); setReviewed(false); }} /></label>
         <label className="flex min-h-11 items-center gap-2 text-xs"><input type="checkbox" className="size-5 accent-primary" checked={reviewed} onChange={(e) => setReviewed(e.target.checked)} />I reviewed the dates, wording and request. This is not approval.</label>
-        <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={!reviewed} onClick={async () => { try { await navigator.clipboard.writeText(text); toast.success("Draft copied, not sent"); } catch { toast.error("Clipboard unavailable"); } }}>Copy email draft</Button><Button disabled={!reviewed || !ready} onClick={() => { if (save({ title: `${so} ${direction === "push_out" ? "push-out" : "pull-in"} request`, body: text, reference: so, category: "customer_email", pinned: false })) toast.success("Email draft saved to private notes"); }}>Save draft to notes</Button></div></div>}
+        <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={!reviewed} onClick={async () => { try { await navigator.clipboard.writeText(text); toast.success("Draft copied, not sent"); } catch { toast.error("Clipboard unavailable"); } }}>Copy email draft</Button><Button disabled={!reviewed || !ready} onClick={() => { if (save({ title: `${so} ${direction === "push_out" ? "push-out" : "pull-in"} request`, body: text, reference: so, category: "customer_email", pinned: false })) toast.success("Email draft saved to private notes"); }}>Save draft to notes</Button><Button variant="outline" disabled={!reviewed || !ready || !order} onClick={() => { if (order && track({ so, customer: order.customer, direction, committed: order.committed.slice(0, 10), proposed, firstDate, plannedGi, response: "awaiting", alternativeDate: "", responseNote: "", sapDone: [] })) toast.success("Added to approval tracker as awaiting customer"); }}>Add to approval tracker</Button></div></div>}
     </DialogContent></Dialog>;
 }

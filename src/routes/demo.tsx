@@ -27,6 +27,7 @@ import { WorkspaceNotes } from "@/components/hub/workspace-notes";
 import { ApexCopilot } from "@/components/hub/apex-copilot";
 import { Scratchpad } from "@/components/hub/scratchpad";
 import { CustomerReschedule } from "@/components/hub/customer-reschedule";
+import { RescheduleTracker } from "@/components/hub/reschedule-tracker";
 
 export const Route = createFileRoute("/demo")({
   staticData: { sitemap: true },
@@ -142,6 +143,7 @@ function Hub() {
             <ApexCopilot />
             <Scratchpad />
             <CustomerReschedule />
+            <RescheduleTracker />
             <ExportDialog shown={shown} />
             <InboundParserDialog />
             <div role="group" aria-label="Row density" className="inline-flex rounded-md border bg-card p-0.5">
