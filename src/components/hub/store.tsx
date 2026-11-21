@@ -45,6 +45,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
   const [activity, setActivity] = useState<Activity[]>([]);
   const db = useRef<SupabaseClient | null>(null);
   const synced = useRef(new Map<string, string>());
+  const cloudReady = useRef(false);
   const qc = useQueryClient();
 
   // Refresh who is signed in when a Google account session starts or ends.
@@ -80,21 +81,25 @@ export function HubProvider({ children }: { children: ReactNode }) {
 
   // Choose the shared cloud board for signed-in teammates; otherwise keep the private browser board.
   useEffect(() => {
+    cloudReady.current = false;
     if (viewerQ.isPending) return;
     if (!viewer) { db.current = null; synced.current = new Map(); loadLocal(); setSync("local"); setLoaded(true); return; }
     const client = boardClient(viewer.door);
     db.current = client;
     setSync("connecting");
     let alive = true;
+    let snapshotLoaded = false;
     (async () => {
       const [{ data, error }, act] = await Promise.all([
         client.from("board_parts").select("id, data").order("id"),
         client.from("board_activity").select("id, at, actor_name, summary").order("at", { ascending: false }).limit(30),
       ]);
       if (!alive) return;
-      if (error) { setSync("error"); toast.error("The shared board could not be loaded. Showing this browser's copy."); loadLocal(); setLoaded(true); return; }
+      if (error) { setSync("error"); toast.error("The shared board could not be loaded. Showing this browser's copy without team sync. Reload before editing team data."); loadLocal(); setLoaded(true); return; }
       const rows = (data ?? []).map((r) => r.data as Part);
       synced.current = new Map(rows.map((p) => [p.id, JSON.stringify(p)]));
+      snapshotLoaded = true;
+      cloudReady.current = true;
       setParts(rows);
       setActivity((act.data ?? []) as Activity[]);
       setSync(rows.length ? "live" : "empty");
@@ -103,6 +108,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
     const channel = client
       .channel(`board-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "board_parts" }, (payload) => {
+        if (!alive || !snapshotLoaded) return;
         if (payload.eventType === "DELETE") {
           const id = (payload.old as { id?: string }).id;
           if (!id) return;
@@ -116,11 +122,12 @@ export function HubProvider({ children }: { children: ReactNode }) {
         setSync("live");
       })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "board_activity" }, (payload) => {
+        if (!alive || !snapshotLoaded) return;
         const a = payload.new as Activity;
         setActivity((list) => (list.some((x) => x.id === a.id) ? list : [a, ...list].slice(0, 30)));
       })
       .subscribe();
-    return () => { alive = false; client.removeChannel(channel); };
+    return () => { alive = false; cloudReady.current = false; client.removeChannel(channel); };
   }, [viewer?.door, viewer?.id, viewerQ.isPending]);
 
   // Push local edits: shared board for signed-in teammates, browser storage otherwise.
@@ -131,7 +138,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
       catch { toast.error("The browser could not save the board. Export a copy before closing this page."); }
       return;
     }
-    if (sync !== "live" && sync !== "empty") return;
+    if (!cloudReady.current || (sync !== "live" && sync !== "empty")) return;
     const { upserts, deletes } = diffParts(synced.current, parts);
     if (!upserts.length && !deletes.length) return;
     upserts.forEach((p) => synced.current.set(p.id, JSON.stringify(p)));
@@ -151,7 +158,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
 
   const logActivity = useCallback((summary: string) => {
     const client = db.current;
-    if (!client) return;
+    if (!client || !cloudReady.current) return;
     client.from("board_activity").insert({ actor_name: actor, summary: summary.slice(0, 500) }).select("id, at, actor_name, summary").single()
       .then(({ data }) => { if (data) setActivity((list) => (list.some((x) => x.id === data.id) ? list : [data as Activity, ...list].slice(0, 30))); });
   }, [actor]);
@@ -220,7 +227,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
     setAnnounce("Sample data restored");
   };
   const loadSampleIntoCloud = async () => {
-    if (!db.current) return;
+    if (!db.current || !cloudReady.current || sync !== "empty" || synced.current.size) return;
     const seed = buildSeed();
     const { error } = await db.current.from("board_parts").upsert(seed.map((p) => ({ id: p.id, data: p, updated_by: actor })));
     if (error) { toast.error("The sample parts could not be added. Try again."); return; }
