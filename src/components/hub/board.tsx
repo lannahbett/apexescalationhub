@@ -3,7 +3,7 @@ import type React from "react";
 import { ArrowUpDown, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { STAGES, activeOrders, eur, orderExposure, type Part, type Stage } from "@/lib/shortages";
+import { STAGES, activeOrders, eur, orderExposure, hasImminentLineRisk, type Part, type Stage } from "@/lib/shortages";
 import { ConfidencePill, DemandChip, LeadTimeChip, LineStop, PlannerBadge, RiskPill, StageBadge } from "./badges";
 import { useHub } from "./store";
 import { StockProjection } from "./stock-projection";
@@ -53,6 +53,7 @@ export function ShortageTable({ parts, onOpen, density = "standard" }: { parts: 
               <td className="px-3 text-xs">
                 <div className="font-medium">{p.line}</div>
                 <div className="text-muted-foreground">Build {fmtDate(p.targetBuild)}</div>
+                {hasImminentLineRisk(p) && <div className="mt-1 text-[11px] font-semibold text-elevated" title="Recorded line-stop estimate below 24 hours; confirm assembly dependency.">Assembly blocker risk · advisory</div>}
               </td>
               <td className="px-3 text-right font-mono text-xs">
                 <div className="font-semibold">{eur(p.valueAtRisk)}</div>
@@ -152,6 +153,7 @@ export function KanbanBoard({ parts, onOpen }: { parts: Part[]; onOpen: (id: str
                     <DemandChip demand={p.demand} />
                   </div>
                   </Button>
+                  {hasImminentLineRisk(p) && <p className="mt-2 text-[11px] font-semibold text-elevated">Assembly blocker risk · advisory</p>}
                    <div className="mt-2"><StockProjection part={p} compact /></div>
                   <StageSelect part={p} className="mt-2 w-full" />
                 </div>

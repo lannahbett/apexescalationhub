@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Resilience Phase 1: daily-operations mission, customer-focused landing page, verified Capgemini 73% / 84% context with attribution and four-stage shift tour; unsupported downtime costs and BOM percentages omitted.
+- [x] Resilience Phase 2: dynamic early-warning / open-execution lenses, shipping navigation, recorded line-risk summary and advisory component focus; desktop and 394px phone checks verified 2 early risks / 12 open parts, unchanged private board, zero page errors or horizontal page overflow. 116 regression tests passed; no live health, BOM completion or single-source claims inferred.
 - [x] Phase 1: grounded Ask Apex guidance with original cited handbook/board excerpts; real Groq GI/PGI explanation and unsupported live SAP date refusal verified. First Date remains a company-specific field, never assumed to be a commitment.
 - [x] Phase 2: browser/viewer-scoped editable notes, linked references, pinning and handover copy; real Groq-assisted constrained customer draft checked against supplied dates, review gate and three saved notes verified after reload; no shared records, emails or SAP changed.
 - [ ] Future Shipping & Dispatch perspective and dock/document-focused briefings; deferred to the next requested phase, not included in Phase 1/2.

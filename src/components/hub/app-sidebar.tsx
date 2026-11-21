@@ -20,6 +20,7 @@ import { initials } from "@/lib/shortages";
 import { useHub } from "./store";
 import { cn } from "@/lib/utils";
 import { navigationMetrics } from "@/lib/navigation-metrics";
+import { WORKFLOWS, type WorkflowId } from "./operational-workflows";
 
 const NAV = [
   { id: "dashboard", label: "Today’s priorities", icon: LayoutDashboard },
@@ -42,13 +43,24 @@ function go(id: string) {
   el.focus({ preventScroll: true });
 }
 
-function NavList({ collapsed, onPick }: { collapsed: boolean; onPick?: () => void }) {
+type WorkflowNavigation = { workflow: WorkflowId | null; onWorkflow: (id: WorkflowId) => void };
+function NavList({ collapsed, onPick, workflow, onWorkflow }: WorkflowNavigation & { collapsed: boolean; onPick?: () => void }) {
   const [active, setActive] = useState<string>("dashboard");
   const { parts, sync } = useHub();
   const metrics = navigationMetrics(parts);
   const pending = sync === "checking" || sync === "connecting";
   return (
     <ul className="space-y-1">
+      <li className="border-b border-sidebar-border pb-3 mb-3">
+        {!collapsed && <p className="px-3 pb-2 text-[11px] font-semibold uppercase text-sidebar-foreground/80">Daily operations</p>}
+        <div role="group" aria-label="Shift workflow" className="space-y-1">
+          {WORKFLOWS.map(({ id, label, icon: Icon, target }) => <Button key={id} variant="ghost" aria-label={label} title={label} aria-pressed={workflow === id}
+            onClick={() => { onWorkflow(id); setActive(target); onPick?.(); requestAnimationFrame(() => go(target)); }}
+            className={cn("min-h-11 w-full justify-start gap-3 px-3 whitespace-normal text-left hover:bg-sidebar-accent hover:text-sidebar-foreground", collapsed && "justify-center px-0", workflow === id && "bg-sidebar-accent text-sidebar-accent-foreground")}>
+            <Icon aria-hidden className="size-4 shrink-0" />{!collapsed && <span>{label}</span>}
+          </Button>)}
+        </div>
+      </li>
       {NAV.map(({ id, label, icon: Icon }) => {
         const metric = id in metrics ? metrics[id as keyof typeof metrics] : undefined;
         const description = metric ? `${label}, ${pending ? "loading" : `${metric.count} ${metric.unit}`}` : label;
@@ -121,7 +133,7 @@ function UserBadge({ collapsed }: { collapsed: boolean }) {
   );
 }
 
-export function AppSidebar() {
+export function AppSidebar({ workflow, onWorkflow }: WorkflowNavigation) {
   const [collapsed, setCollapsed] = useState(false);
   useEffect(() => {
     setCollapsed(localStorage.getItem("apex-sidebar") === "collapsed");
@@ -141,8 +153,8 @@ export function AppSidebar() {
       <div className={cn("flex items-center", collapsed ? "justify-center" : "justify-between")}>
         <ApexLogo compact={collapsed} />
       </div>
-      <nav aria-label="Main navigation" className="flex-1">
-        <NavList collapsed={collapsed} />
+      <nav aria-label="Main navigation" className="min-h-0 flex-1 overflow-y-auto">
+        <NavList collapsed={collapsed} workflow={workflow} onWorkflow={onWorkflow} />
       </nav>
       <Button
         variant="ghost"
@@ -164,7 +176,7 @@ export function AppSidebar() {
   );
 }
 
-export function MobileNav() {
+export function MobileNav({ workflow, onWorkflow }: WorkflowNavigation) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -178,13 +190,13 @@ export function MobileNav() {
         <Menu />
       </Button>
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="left" className="w-72 bg-sidebar p-4 text-sidebar-foreground">
+        <SheetContent side="left" className="w-72 overflow-y-auto bg-sidebar p-4 text-sidebar-foreground">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <div className="mb-6">
             <ApexLogo />
           </div>
           <nav aria-label="Main navigation">
-            <NavList collapsed={false} onPick={() => setOpen(false)} />
+            <NavList collapsed={false} workflow={workflow} onWorkflow={onWorkflow} onPick={() => setOpen(false)} />
           </nav>
           <div className="mt-6">
             <UserBadge collapsed={false} />

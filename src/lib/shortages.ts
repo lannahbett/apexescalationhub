@@ -89,6 +89,19 @@ export const STANDUP_SECONDS = 180;
 export function standupParts(parts: Part[]) { return parts.filter((p) => p.stage !== "delivered").sort((a, b) => b.riskScore - a.riskScore || a.id.localeCompare(b.id)).slice(0, 5); }
 export function sliceLines(parts: Part[], line: string) { return line === "all" ? parts : parts.filter((p) => p.line === line); }
 
+/** Advisory urgency signal, not proof of a BOM dependency or single-source supply. */
+export function hasImminentLineRisk(p: Part) {
+  return p.stage !== "delivered" && Number.isFinite(p.hoursToLineStop) && p.hoursToLineStop >= 0 && p.hoursToLineStop < 24;
+}
+/** Stock buffer is relative to the recorded snapshot, not a live inventory reading. */
+export function earlyWarningParts(parts: Part[]) {
+  return parts.filter((p) => p.stage !== "delivered" && (hasImminentLineRisk(p) || (stockProjection(p.stock)?.stockoutHours ?? Infinity) < 24));
+}
+export function operationalSignals(parts: Part[]) {
+  const imminent = parts.filter(hasImminentLineRisk);
+  return { imminent, lines: new Set(imminent.map((p) => p.line)).size, early: earlyWarningParts(parts) };
+}
+
 export const ROOT_CAUSES = {
   tier2: "Tier-2 / raw material shortage",
   breakdown: "Supplier machine / tooling breakdown",
@@ -384,7 +397,7 @@ export function buildSeed({ improvementExamples = true }: { improvementExamples?
   return parts;
 }
 
-export type FilterId = "all" | "critical" | "stalled" | "mine" | "due48" | "demand" | "leadtime";
+export type FilterId = "all" | "critical" | "stalled" | "mine" | "due48" | "demand" | "leadtime" | "component";
 export const FILTERS: { id: FilterId; label: string }[] = [
   { id: "all", label: "All" },
   { id: "critical", label: "Line Down / Critical" },
@@ -393,6 +406,7 @@ export const FILTERS: { id: FilterId; label: string }[] = [
   { id: "due48", label: "Due < 48h" },
   { id: "demand", label: "Abnormal Demand" },
   { id: "leadtime", label: "Lead-Time Drift ≥50%" },
+  { id: "component", label: "Line-stop risk <24h" },
 ];
 
 export function filterParts(parts: Part[], filter: FilterId, q: string) {
@@ -404,6 +418,7 @@ export function filterParts(parts: Part[], filter: FilterId, q: string) {
     if (filter === "due48" && p.hoursToLineStop > 48) return false;
     if (filter === "demand" && !isAbnormalDemand(p.demand)) return false;
     if (filter === "leadtime" && leadTimeDriftPct(p.leadTime) < 50) return false;
+    if (filter === "component" && !hasImminentLineRisk(p)) return false;
     if (!query) return true;
     return [p.partNumber, p.planner, p.supplier, p.po, p.description, p.category, ...(p.orders ?? []).flatMap((o) => [o.customer, o.so])].some((v) => v.toLowerCase().includes(query));
   });

@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { CONFIDENCE, CURRENT_USER, DEMAND_SURGE_THRESHOLD, demandSurgePct, leadTimeDriftPct, orderExposure, orderSlipDays, eur, type Confidence, type Part, type TimelineEntry } from "@/lib/shortages";
+import { CONFIDENCE, CURRENT_USER, DEMAND_SURGE_THRESHOLD, demandSurgePct, leadTimeDriftPct, orderExposure, orderSlipDays, eur, hasImminentLineRisk, type Confidence, type Part, type TimelineEntry } from "@/lib/shortages";
 import { ConfidencePill, LineStop, PlannerBadge, RiskPill } from "./badges";
 import { StageSelect } from "./board";
 import { RiskExplainer } from "./risk-explainer";
@@ -44,6 +44,7 @@ export function PartSheet({ partId, onClose }: { partId: string | null; onClose:
               <SheetDescription className="text-sidebar-foreground/90">{part.description} · {part.category}</SheetDescription>
             </SheetHeader>
             <div className="space-y-5 p-5">
+              {hasImminentLineRisk(part) && <div className="border-l-2 border-elevated bg-elevated-soft p-3 text-xs"><p className="font-semibold text-elevated">Potential assembly blocker · advisory</p><p className="mt-1">Recorded line-stop estimate: {part.hoursToLineStop} hours. Confirm the BOM dependency, available stock and qualified alternatives with the planner. This is not a verified single point of failure.</p></div>}
               <RiskExplainer key={part.id} part={part} />
               <div className="grid grid-cols-2 gap-3 text-xs">
                 {[

@@ -16,10 +16,10 @@ export function ShippingGate() {
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 id="shipping-title" className="flex items-center gap-2 text-lg font-semibold"><Truck className="size-5" /> Outbound shipping & customs gate</h2>
-          <p className="text-sm text-muted-foreground">Documents each customer order needs before it can leave the dock. {ready} of {rows.length} open orders ready. Saved in this browser; no customs or carrier systems are connected.</p>
+          <p className="text-sm text-muted-foreground">{ready} of {rows.length} open orders have complete document checklists. Material availability and dispatch approval must be checked separately. Saved with the board; no customs or carrier systems are connected.</p>
         </div>
       </div>
-      <div className="overflow-x-auto rounded-md border" tabIndex={0} aria-label="Shipping readiness table">
+      <div className="relative max-w-full overflow-x-auto rounded-md border" role="region" tabIndex={0} aria-label="Shipping readiness table">
         <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-muted text-left text-xs"><tr><th className="px-3 py-2">Sales order</th><th className="px-3 py-2">Customer</th><th className="px-3 py-2">Freight</th><th className="px-3 py-2">Readiness</th><th className="px-3 py-2"><span className="sr-only">Action</span></th></tr></thead>
           <tbody>{rows.map(({ order }) => {
@@ -28,7 +28,7 @@ export function ShippingGate() {
               <td className="px-3 py-2 font-mono">{order.so}</td><td className="px-3 py-2">{order.customer}</td>
               <td className="px-3 py-2">{FREIGHT_MODES[order.freightMode ?? "unspecified"]}</td>
               <td className="px-3 py-2">{r.ready
-                ? <span className="inline-flex items-center gap-1 text-success"><CheckCircle2 className="size-4" /> Ready to ship</span>
+                ? <span className="inline-flex items-center gap-1 text-success"><CheckCircle2 className="size-4" /> Documents complete</span>
                 : <span className="inline-flex items-center gap-1 text-critical"><CircleAlert className="size-4" /> {!r.freightSet ? "Choose freight mode" : `${r.missing.length} of ${r.required.length} documents missing`}</span>}</td>
               <td className="px-3 py-2 text-right"><Button size="sm" variant="outline" onClick={() => setEdit(order)}>Documents</Button></td>
             </tr>;

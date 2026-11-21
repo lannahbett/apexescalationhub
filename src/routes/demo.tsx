@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ROLE_VIEWS, COMMERCIAL_MODES, FILTERS, filterParts, sliceLines, type FilterId } from "@/lib/shortages";
+import { ROLE_VIEWS, COMMERCIAL_MODES, FILTERS, filterParts, sliceLines, earlyWarningParts, type FilterId } from "@/lib/shortages";
 import { HubProvider, useHub } from "@/components/hub/store";
 import { KanbanBoard, ShortageTable, type Density } from "@/components/hub/board";
 import { RoleBoard } from "@/components/hub/role-board";
@@ -28,15 +28,16 @@ import { ApexCopilot } from "@/components/hub/apex-copilot";
 import { Scratchpad } from "@/components/hub/scratchpad";
 import { CustomerReschedule } from "@/components/hub/customer-reschedule";
 import { RescheduleTracker } from "@/components/hub/reschedule-tracker";
+import { OperationalPulse, type WorkflowId } from "@/components/hub/operational-workflows";
 
 export const Route = createFileRoute("/demo")({
   staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Apex Escalation Hub | Daily Operations Dashboard" },
-      { name: "description", content: "Personalize your manufacturing dashboard, act on critical shortages and explore guided practice scenarios." },
+      { name: "description", content: "Work through material risks, supplier recovery, customer commitments and shipping readiness in one daily manufacturing workspace." },
       { property: "og:title", content: "Apex Escalation Hub | Daily Operations Dashboard" },
-      { property: "og:description", content: "Critical parts, supplier delivery drift and customer commitments in a customizable action dashboard." },
+      { property: "og:description", content: "Early warnings, recovery scenarios and shipping readiness on the same shortage board, with human-confirmed decisions." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -58,25 +59,33 @@ function Hub() {
   const [open, setOpen] = useState<string | null>(null);
   const [density, setDensity] = useState<Density>("standard");
   const [dashboardFocus, setDashboardFocus] = useState<{ ids: string[]; label: string } | null>(null);
+  const [workflow, setWorkflow] = useState<WorkflowId | null>(null);
+  const pickWorkflow = (id: WorkflowId) => {
+    setWorkflow(id); setQ(""); setFilter("all"); setLine("all");
+    setDashboardFocus(id === "early" ? { ids: earlyWarningParts(parts).map((p) => p.id), label: "Early warning: line-stop estimate or snapshot stock buffer <24h" } : id === "execution" ? { ids: parts.filter((p) => p.stage !== "delivered").map((p) => p.id), label: "Execution: open shortages" } : null);
+  };
   useEffect(() => { const d = localStorage.getItem("apex-density"); if (d === "compact") setDensity("compact"); }, []);
   const changeDensity = (d: Density) => { setDensity(d); localStorage.setItem("apex-density", d); };
   const lineParts = useMemo(() => sliceLines(parts, line), [parts, line]);
-  const shown = useMemo(() => filterParts(lineParts, filter, q).filter((p) => !dashboardFocus || dashboardFocus.ids.includes(p.id)), [lineParts, filter, q, dashboardFocus]);
+  const shown = useMemo(() => {
+    const earlyIds = new Set(earlyWarningParts(lineParts).map((p) => p.id));
+    return filterParts(lineParts, filter, q).filter((p) => workflow === "early" ? earlyIds.has(p.id) : workflow === "execution" ? p.stage !== "delivered" : !dashboardFocus || dashboardFocus.ids.includes(p.id));
+  }, [lineParts, filter, q, dashboardFocus, workflow]);
   const counts = useMemo(() => Object.fromEntries(FILTERS.map((f) => [f.id, filterParts(lineParts, f.id, "").length])), [lineParts]);
 
   return (
     <div className="flex min-h-dvh w-full overflow-x-clip">
-      <AppSidebar />
+      <AppSidebar workflow={workflow} onWorkflow={pickWorkflow} />
       <div className="min-w-0 flex-1">
       <a href="#board" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-card focus:px-3 focus:py-2 focus:text-xs">Skip to shortage board</a>
       <header className="bg-sidebar text-sidebar-foreground">
         <div className="mx-auto grid grid-cols-[minmax(0,1fr)_auto] sm:flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3">
           <div className="flex min-w-0 items-center gap-2.5">
-            <MobileNav />
+            <MobileNav workflow={workflow} onWorkflow={pickWorkflow} />
             <div className="md:hidden"><ApexLogo compact /></div>
             <div className="min-w-0">
-              <h1 className="text-sm font-semibold leading-tight">Daily manufacturing shortage dashboard</h1>
-              <div className="text-[11px] text-sidebar-foreground/80">Morning standup · {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</div>
+              <h1 className="text-sm font-semibold leading-tight">Apex · Daily operations & shortage resilience</h1>
+              <div className="text-[11px] text-sidebar-foreground/80">Production continuity · Customer commitments · Human-confirmed decisions</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -96,18 +105,19 @@ function Hub() {
         </section>
         <SharedBoardEmpty />
         <ActivityFeed />
+        <OperationalPulse onOpen={setOpen} />
          <div id="dashboard" tabIndex={-1}><ModularDashboard onOpen={setOpen} onFocus={(ids, label) => {
-           setQ(""); setFilter("all"); setDashboardFocus({ ids, label });
+           setWorkflow(null); setQ(""); setFilter("all"); setDashboardFocus({ ids, label });
            setLine("all"); requestAnimationFrame(() => { document.getElementById("board")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); document.getElementById("board")?.focus({ preventScroll: true }); });
          }} /></div>
 
-         <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-5"><h2 className="text-lg font-semibold">Shortage board <span className="font-mono text-xs font-normal text-muted-foreground">{shown.length} parts</span></h2>{dashboardFocus && <div role="status" className="flex min-w-0 items-center gap-2 text-xs text-info"><span className="min-w-0 break-words">{dashboardFocus.label}</span><Button variant="ghost" size="icon" title="Clear dashboard focus" aria-label="Clear dashboard focus" onClick={() => setDashboardFocus(null)}><X /></Button></div>}</div>
+         <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-5"><h2 className="text-lg font-semibold">Shortage board <span className="font-mono text-xs font-normal text-muted-foreground">{shown.length} parts</span></h2>{dashboardFocus && <div role="status" className="flex min-w-0 items-center gap-2 text-xs text-info"><span className="min-w-0 break-words">{dashboardFocus.label}</span><Button variant="ghost" size="icon" title="Clear dashboard focus" aria-label="Clear dashboard focus" onClick={() => { setDashboardFocus(null); setWorkflow(null); }}><X /></Button></div>}</div>
          <div className="flex flex-wrap items-center gap-2">
            <label className="flex min-w-0 flex-wrap items-center gap-2 text-xs font-semibold">Assembly line
-             <select aria-label="Assembly line" value={line} onChange={(e) => { setLine(e.target.value); setDashboardFocus(null); }} className="h-11 max-w-full rounded-md border border-input bg-card px-3"><option value="all">All assembly lines</option>{[...new Set(parts.map((p) => p.line))].sort().map((name) => <option key={name} value={name}>{name}</option>)}</select>
+             <select aria-label="Assembly line" value={line} onChange={(e) => { setLine(e.target.value); setDashboardFocus(null); setWorkflow(null); }} className="h-11 max-w-full rounded-md border border-input bg-card px-3"><option value="all">All assembly lines</option>{[...new Set(parts.map((p) => p.line))].sort().map((name) => <option key={name} value={name}>{name}</option>)}</select>
            </label>
            <StandupMode parts={lineParts} />
-           <BaselineReset onReset={() => { setQ(""); setFilter("all"); setLine("all"); setDashboardFocus(null); setOpen(null); }} />
+           <BaselineReset onReset={() => { setWorkflow(null); setQ(""); setFilter("all"); setLine("all"); setDashboardFocus(null); setOpen(null); }} />
            <ArchitectureDrawer />
          </div>
 
@@ -119,7 +129,7 @@ function Hub() {
             </div>
             <div role="group" aria-label="Filters" className="flex flex-wrap gap-1.5">
               {FILTERS.map((f) => (
-                 <Button variant="ghost" type="button" key={f.id} aria-pressed={filter === f.id} onClick={() => { setFilter(f.id); setDashboardFocus(null); }}
+                 <Button variant="ghost" type="button" key={f.id} aria-pressed={filter === f.id} onClick={() => { setFilter(f.id); setDashboardFocus(null); setWorkflow(null); }}
                   className={cn("inline-flex items-center gap-1.5 min-h-11 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
                     filter === f.id ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-accent")}>
                   {f.label}
@@ -170,7 +180,7 @@ function Hub() {
           {view === "table" ? roleView === "planner" ? <ShortageTable parts={shown} onOpen={setOpen} density={density} /> : <RoleBoard parts={shown} onOpen={setOpen} density={density} /> : <KanbanBoard parts={shown} onOpen={setOpen} />}
         </section>
         <ShippingGate />
-         <Improvement onFocus={(ids, label) => { setQ(""); setFilter("all"); setLine("all"); setDashboardFocus({ ids, label }); requestAnimationFrame(() => { document.getElementById("board")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }); document.getElementById("board")?.focus({ preventScroll: true }); }); }} />
+         <Improvement onFocus={(ids, label) => { setWorkflow(null); setQ(""); setFilter("all"); setLine("all"); setDashboardFocus({ ids, label }); requestAnimationFrame(() => { document.getElementById("board")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }); document.getElementById("board")?.focus({ preventScroll: true }); }); }} />
         <ConnectorsHub />
       </main>
       <PartSheet partId={open} onClose={() => setOpen(null)} />
