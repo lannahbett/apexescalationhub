@@ -90,6 +90,10 @@ export function HubProvider({ children }: { children: ReactNode }) {
     let alive = true;
     let snapshotLoaded = false;
     (async () => {
+      // Only approved board members may read or write team rows; everyone else gets a private browser board.
+      const member = await client.from("board_members").select("sub").limit(1);
+      if (!alive) return;
+      if (!member.error && (member.data ?? []).length === 0) { db.current = null; synced.current = new Map(); loadLocal(); setSync("local"); setLoaded(true); return; }
       const [{ data, error }, act] = await Promise.all([
         client.from("board_parts").select("id, data").order("id"),
         client.from("board_activity").select("id, at, actor_name, summary").order("at", { ascending: false }).limit(30),

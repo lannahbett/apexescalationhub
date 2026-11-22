@@ -8,6 +8,7 @@ const state = vi.hoisted(() => ({
   load: Promise.resolve({ data: [] as { id: string; data: Part }[], error: null as null | { message: string } }),
   callbacks: [] as ((payload: { eventType: string; new: { data: Part }; old: { id: string } }) => void)[],
   writes: vi.fn(async (_rows: unknown) => ({ error: null })),
+  member: [{ sub: "test-viewer" }] as { sub: string }[],
 }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: () => vi.fn() }));
 vi.mock("@tanstack/react-query", async (original) => ({ ...await original<typeof import("@tanstack/react-query")>(), useQuery: () => ({ isPending: false, data: { door: "lovable", id: "test-viewer", name: "Tester" } }) }));
@@ -22,7 +23,7 @@ vi.mock("@/lib/cloud-board", async (original) => ({ ...await original<typeof imp
   return {
     from: (table: string) => {
       const query = { select: () => query, order: () => query, limit: () => query,
-        then: (resolve: (value: unknown) => void, reject: (error: unknown) => void) => (table === "board_parts" ? state.load : Promise.resolve({ data: [], error: null })).then(resolve, reject),
+        then: (resolve: (value: unknown) => void, reject: (error: unknown) => void) => (table === "board_parts" ? state.load : table === "board_members" ? Promise.resolve({ data: state.member, error: null }) : Promise.resolve({ data: [], error: null })).then(resolve, reject),
         upsert: state.writes, delete: () => ({ in: state.writes }), insert: state.writes,
       };
       return query;
@@ -43,7 +44,7 @@ async function incoming(callback = state.callbacks[0]) {
   if (!callback) throw new Error("No realtime subscription");
   await act(async () => callback({ eventType: "UPDATE", new: { data: { ...sample(), description: "Colleague edit" } }, old: { id: sample().id } }));
 }
-afterEach(() => { cleanup(); localStorage.clear(); state.callbacks = []; state.writes.mockClear(); });
+afterEach(() => { cleanup(); localStorage.clear(); state.callbacks = []; state.writes.mockClear(); state.member = [{ sub: "test-viewer" }]; });
 
 describe("shared board initial-load protection", () => {
   it.each([false, true])("does not upload fallback data after failed load and realtime update (browser copy: %s)", async (browserCopy) => {
@@ -78,6 +79,14 @@ describe("shared board initial-load protection", () => {
     await waitFor(() => expect(state.writes).toHaveBeenCalledTimes(1));
     expect(state.writes.mock.calls[0]?.[0]).toEqual([expect.objectContaining({ id: sample().id, data: expect.objectContaining({ description: "Planner edit" }) })]);
     cleanup(); state.writes.mockClear(); await incoming(callback);
+    expect(state.writes).not.toHaveBeenCalled();
+  });
+  it("gives a signed-in non-member a private working board without writing team data", async () => {
+    state.member = [];
+    state.load = Promise.resolve({ data: [], error: null });
+    mount(); await waitFor(() => expect(screen.getByTestId("sync")).toHaveTextContent("local"));
+    expect(JSON.parse(screen.getByTestId("parts").textContent ?? "[]").length).toBeGreaterThan(0);
+    await act(async () => screen.getByRole("button", { name: "Edit" }).click());
     expect(state.writes).not.toHaveBeenCalled();
   });
 });
