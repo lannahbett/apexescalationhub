@@ -18,20 +18,20 @@ export const Route = createFileRoute("/privacy")({
 
 function Privacy() {
   return (
-    <LegalPage title="Privacy Notice" updated="14 November 2026">
+    <LegalPage title="Privacy Notice" updated="22 November 2026">
       <p>This notice explains what personal data Apex Escalation Hub (the “Platform”) processes, why, who receives it and what rights you have. The Owner of the Platform is the data controller. We collect only what the Platform needs to work and we never sell personal data or use it for advertising.</p>
 
-      <h2>1. Using the demo without signing in</h2>
-      <p>You can use the full demo without an account. In that case your board, settings, dashboard layout, role perspective, commercial mode, shipping readiness choices and menu preference are saved only in your own browser's local storage. They are not sent to our servers. You can delete them at any time with “Reset” in the demo or by clearing this site's data in your browser.</p>
-      <p>Notes & drafts are stored separately in this browser, scoped to your current viewer, and are not shared with teammates or backed up to Cloud. Board reset does not delete them; delete individual notes or clear site data to remove them. Anyone with access to your browser profile may be able to read them. Copying a handover or email puts it on your device clipboard; the Platform does not send it.</p>
+      <h2>1. Account required</h2>
+      <p>You must sign in to use the workspace. Your settings, dashboard layout, role perspective, commercial mode, shipping readiness choices and menu preference are saved in your browser's local storage on that device; data you place on the shared board is stored as described in section 3. You can remove browser data by clearing this site's data.</p>
+      <p>Notes & drafts are stored separately in this browser, scoped to your account, and are not shared with teammates or backed up to Cloud. Anyone with access to your browser profile may be able to read them. Copying a handover or email puts it on your device clipboard; the Platform does not send it.</p>
 
       <h2>2. Signing in</h2>
-      <p>Signing in is optional and only needed for the shared team board. Two methods exist:</p>
+      <p>Signing in is required to access the workspace. Two methods exist:</p>
       <ul>
         <li><strong>Lovable workspace account:</strong> if you are signed in to Lovable, the Platform receives your Lovable user ID, display name and email to recognise you.</li>
         <li><strong>Google account:</strong> if you choose “Continue with Google”, Google shares your name, email address, profile picture and a Google account ID with us. A sign-in session is stored in your browser so you stay signed in until you sign out.</li>
       </ul>
-      <p>Signing in does not by itself give access to the shared board; the Owner must approve members. Legal basis: your request to use the shared board and our legitimate interest in securing it.</p>
+      <p>Signing in does not by itself give access to the shared board; the Owner must approve members. Legal basis: performance of the agreement you accept by signing in (the Terms of Use) and our legitimate interest in securing the Platform, protecting its intellectual property and Brand Assets, and detecting misuse such as copying or scraping. Sign-in records and account activity may be kept as evidence where misuse is suspected, for as long as needed to establish, exercise or defend legal claims.</p>
 
       <h2>3. Shared team board and activity log</h2>
       <p>For approved members, parts and order data on the shared board are stored in our hosted database and shown live to other approved members. Each change is recorded in a team activity log with your display name, the time and a short summary of what changed. This log is append-only so the team can trust its history. Board data and activity are kept while the shared board is in use and deleted when you or the Owner remove them or the Platform is retired.</p>

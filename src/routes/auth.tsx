@@ -47,7 +47,7 @@ function AuthPage() {
       <div className="w-full max-w-sm space-y-5 rounded-lg border bg-card p-6">
         <ApexLogo />
         <div>
-          <h1 className="text-lg font-semibold">Join your team's shared board</h1>
+          <h1 className="text-lg font-semibold">Sign in to Apex Escalation Hub</h1>
           <p className="mt-1 text-sm text-muted-foreground">Teammates in your Lovable workspace are recognised automatically. Everyone else can sign in with Google.</p>
         </div>
         {viewer.isPending && <p role="status" className="text-sm text-muted-foreground">Checking whether you are already signed in…</p>}
@@ -57,7 +57,7 @@ function AuthPage() {
           </Button>
         )}
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-        <p className="text-xs text-muted-foreground">Prefer not to sign in? <Link to="/demo" className="underline">Use a private board in this browser</Link>.</p>
+        <p className="text-xs text-muted-foreground">Signing in is required to use Apex. By continuing you accept the <Link to="/terms" className="underline">Terms of Use</Link> and <Link to="/privacy" className="underline">Privacy Notice</Link>.</p>
       </div>
     </main>
   );

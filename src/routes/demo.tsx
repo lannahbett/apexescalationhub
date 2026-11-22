@@ -30,9 +30,10 @@ import { CustomerReschedule } from "@/components/hub/customer-reschedule";
 import { RescheduleTracker } from "@/components/hub/reschedule-tracker";
 import { OperationalPulse, type WorkflowId } from "@/components/hub/operational-workflows";
 import { EnergyDemo } from "@/components/hub/energy-demo";
+import { RequireSignIn } from "@/components/auth/require-sign-in";
 
 export const Route = createFileRoute("/demo")({
-  staticData: { sitemap: true },
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Apex Escalation Hub | Daily Operations Dashboard" },
@@ -44,10 +45,12 @@ export const Route = createFileRoute("/demo")({
     ],
   }),
   component: () => (
-    <HubProvider>
-      <WorkspaceNotes><Hub /></WorkspaceNotes>
-      <Toaster />
-    </HubProvider>
+    <RequireSignIn>
+      <HubProvider>
+        <WorkspaceNotes><Hub /></WorkspaceNotes>
+        <Toaster />
+      </HubProvider>
+    </RequireSignIn>
   ),
 });
 
