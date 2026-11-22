@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Neoenergia: executive proposal grounded in official Challenge 3, explicit prototype/integration boundaries and proposed (not mandated) 90-day pilot metrics; delivered in Files.
+- [x] Neoenergia: isolated eight-material electrical-sector preset, regional filters, milestones, details and CSV export; desktop/394px phone verified, four alert rows/two regional rows, unchanged browser board and zero page errors. Nine focused regression tests pass; no shared store or external-system writes.
 - [x] Resilience Phase 1: daily-operations mission, customer-focused landing page, verified Capgemini 73% / 84% context with attribution and four-stage shift tour; unsupported downtime costs and BOM percentages omitted.
 - [x] Resilience Phase 2: dynamic early-warning / open-execution lenses, shipping navigation, recorded line-risk summary and advisory component focus; desktop and 394px phone checks verified 2 early risks / 12 open parts, unchanged private board, zero page errors or horizontal page overflow. 116 regression tests passed; no live health, BOM completion or single-source claims inferred.
 - [x] Phase 1: grounded Ask Apex guidance with original cited handbook/board excerpts; real Groq GI/PGI explanation and unsupported live SAP date refusal verified. First Date remains a company-specific field, never assumed to be a commitment.

@@ -29,6 +29,7 @@ import { Scratchpad } from "@/components/hub/scratchpad";
 import { CustomerReschedule } from "@/components/hub/customer-reschedule";
 import { RescheduleTracker } from "@/components/hub/reschedule-tracker";
 import { OperationalPulse, type WorkflowId } from "@/components/hub/operational-workflows";
+import { EnergyDemo } from "@/components/hub/energy-demo";
 
 export const Route = createFileRoute("/demo")({
   staticData: { sitemap: true },
@@ -119,6 +120,7 @@ function Hub() {
            <StandupMode parts={lineParts} />
            <BaselineReset onReset={() => { setWorkflow(null); setQ(""); setFilter("all"); setLine("all"); setDashboardFocus(null); setOpen(null); }} />
            <ArchitectureDrawer />
+           <EnergyDemo />
          </div>
 
         <section aria-label="Board filters and view" className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
