@@ -7,6 +7,7 @@ import { ApexLogo } from "@/components/brand/apex-logo";
 import { lovable } from "@/integrations/lovable";
 import { supabase } from "@/integrations/supabase/client";
 import { getViewer } from "@/lib/viewer.functions";
+import { startJudgeSession } from "@/lib/judge-access.functions";
 
 export const Route = createFileRoute("/auth")({
   staticData: { sitemap: false },
@@ -32,6 +33,18 @@ function AuthPage() {
   const fetchViewer = useServerFn(getViewer);
   const viewer = useQuery({ queryKey: ["viewer"], queryFn: () => fetchViewer(), retry: false });
   const [error, setError] = useState("");
+  const judgeFn = useServerFn(startJudgeSession);
+  const [judgeBusy, setJudgeBusy] = useState(false);
+  const judge = async () => {
+    setError(""); setJudgeBusy(true);
+    try {
+      const { token } = await judgeFn();
+      const { error: e } = await supabase.auth.verifyOtp({ token_hash: token, type: "magiclink" });
+      if (e) throw e;
+      await viewer.refetch();
+    } catch { setError("Judge access did not complete. Please try again."); }
+    finally { setJudgeBusy(false); }
+  };
   useEffect(() => { if (viewer.data) navigate({ to: "/demo", replace: true }); }, [viewer.data, navigate]);
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => { if (event === "SIGNED_IN") viewer.refetch(); });
@@ -55,6 +68,14 @@ function AuthPage() {
           <Button type="button" variant="outline" onClick={google} className="min-h-11 w-full gap-[10px] border-google-border bg-google-background px-3 text-sm font-medium text-google-foreground hover:bg-google-background hover:text-google-foreground [&_svg]:size-[18px]">
             <GoogleG /> Continue with Google
           </Button>
+        )}
+        {!viewer.data && (
+          <div className="space-y-2 border-t pt-4">
+            <Button type="button" onClick={judge} disabled={judgeBusy} className="min-h-11 w-full">
+              {judgeBusy ? "Opening the demo…" : "Enter as judge or evaluator (no Google needed)"}
+            </Button>
+            <p className="text-xs text-muted-foreground">Opens a private sample board saved only in this browser. It never sees or changes team data.</p>
+          </div>
         )}
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         <p className="text-xs text-muted-foreground">Signing in is required to use Apex. By continuing you accept the <Link to="/terms" className="underline">Terms of Use</Link> and <Link to="/privacy" className="underline">Privacy Notice</Link>.</p>
