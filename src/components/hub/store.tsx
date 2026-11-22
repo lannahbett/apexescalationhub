@@ -91,6 +91,9 @@ export function HubProvider({ children }: { children: ReactNode }) {
     let snapshotLoaded = false;
     (async () => {
       // Only approved board members may read or write team rows; everyone else gets a private browser board.
+      // Joins the team when an invite matches this email, or when the team has no members yet.
+      try { await client.rpc("claim_board_membership"); } catch { /* membership check below decides */ }
+      if (!alive) return;
       const member = await client.from("board_members").select("sub").limit(1);
       if (!alive) return;
       if (!member.error && (member.data ?? []).length === 0) { db.current = null; synced.current = new Map(); loadLocal(); setSync("local"); setLoaded(true); return; }

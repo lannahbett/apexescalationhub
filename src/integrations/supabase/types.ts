@@ -41,17 +41,38 @@ export type Database = {
         }
         Relationships: []
       }
+      board_invites: {
+        Row: {
+          added_at: string
+          added_by: string
+          email: string
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string
+          email: string
+        }
+        Update: {
+          added_at?: string
+          added_by?: string
+          email?: string
+        }
+        Relationships: []
+      }
       board_members: {
         Row: {
           added_at: string
+          email: string | null
           sub: string
         }
         Insert: {
           added_at?: string
+          email?: string | null
           sub: string
         }
         Update: {
           added_at?: string
+          email?: string | null
           sub?: string
         }
         Relationships: []
@@ -109,6 +130,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_board_membership: { Args: never; Returns: boolean }
       is_board_member: { Args: never; Returns: boolean }
     }
     Enums: {

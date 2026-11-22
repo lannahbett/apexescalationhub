@@ -33,3 +33,6 @@
 - [x] Guided practice: three isolated sample missions for freight comparison, supplier update review and customer date changes; confirmed board unchanged
 
 - [x] Business vision opens first at /; demo at /demo; launch film; Terms & Privacy pages
+
+- [x] Add teammates to the shared board (invite by email)
+- [x] Continuous improvement: prefilled, reorderable/hideable/collapsible sections

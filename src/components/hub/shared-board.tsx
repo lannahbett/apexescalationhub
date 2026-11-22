@@ -4,6 +4,7 @@ import { Cloud, CloudOff, History, LoaderCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useHub, viewerQuery } from "./store";
+import { TeamMembers } from "./team-members";
 
 const LABEL = {
   checking: "Checking sign-in…",
@@ -26,6 +27,7 @@ export function SharedBoardStatus() {
         {LABEL[sync]}
       </span>
       {!viewer && <Button asChild size="sm" variant="outline" className="min-h-11"><Link to="/auth">Sign in with Google</Link></Button>}
+      <TeamMembers />
       {viewer?.door === "account" && <Button size="sm" variant="ghost" className="min-h-11" onClick={signOut}><LogOut aria-hidden /> Sign out</Button>}
     </div>
   );
