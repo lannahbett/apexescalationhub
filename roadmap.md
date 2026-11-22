@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Copilot Phase 3: live rule-based action plan in Ask Apex (planner/buyer/OM lenses, cited handbook steps, open part, mark reviewed, save to notes, quick questions); 124 tests pass; signed-in browser check pending
 - [x] Neoenergia: executive proposal grounded in official Challenge 3, explicit prototype/integration boundaries and proposed (not mandated) 90-day pilot metrics; delivered in Files.
 - [x] Neoenergia: isolated eight-material electrical-sector preset, regional filters, milestones, details and CSV export; desktop/394px phone verified, four alert rows/two regional rows, unchanged browser board and zero page errors. Nine focused regression tests pass; no shared store or external-system writes.
 - [x] Resilience Phase 1: daily-operations mission, customer-focused landing page, verified Capgemini 73% / 84% context with attribution and four-stage shift tour; unsupported downtime costs and BOM percentages omitted.

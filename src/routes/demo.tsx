@@ -155,7 +155,7 @@ function Hub() {
               </select>
             </label>
             <BriefingDialog />
-            <ApexCopilot />
+            <ApexCopilot onOpen={setOpen} />
             <Scratchpad />
             <CustomerReschedule />
             <RescheduleTracker />
